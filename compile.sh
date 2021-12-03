@@ -1,11 +1,11 @@
 cd server/src/
 make clean
 make all
-cp server.bin ../../server.bin
+cp server.bin ../../DS
 
 cd ../../
 
 cd client/src/
 make clean
 make all
-cp client.bin ../../client.bin
+cp client.bin ../../User
