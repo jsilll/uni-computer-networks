@@ -5,11 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 /* 2 defines */
+#define GROUP_NUMBER 6
 /* 3 external declarations */
 /* 4 typedefs */
 
 /* 5 global variable declarations */
-int PORT = 58000 + 6;
+int PORT = 58000 + GROUP_NUMBER;
 int VERBOSE = 0;
 
 /* 6 function prototypes */
