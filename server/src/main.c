@@ -11,7 +11,7 @@ bool VERBOSE = false;
 
 /* Argument Parsing Functions */
 void parseArgs(int argc, char *argv[]);
-int validatePortArg(char *port);
+void parsePortArg(char *port);
 
 int main(int argc, char *argv[])
 {
@@ -33,23 +33,23 @@ void parseArgs(int argc, char *argv[])
         switch (opt)
         {
         case 'p':
-            PORT = validatePortArg(optarg);
+            parsePortArg(optarg);
             break;
         case 'v':
             VERBOSE = true;
             break;
         case ':':
-            fprintf(stderr, "Missing value for port (-p) option\n");
+            fprintf(stderr, "Missing argument for port (-p) option\n");
             exit(EXIT_FAILURE);
             break;
         case '?':
-            fprintf(stderr, "Unknown option: %c\n", optopt);
+            fprintf(stderr, "Unknown option: -%c\n", optopt);
             exit(EXIT_FAILURE);
             break;
         }
     }
 
-    for (; optind < argc; optind++)
+    if (optind < argc)
     {
         fprintf(stderr, "Unecessary extra argument: %s\n", argv[optind]);
         exit(EXIT_FAILURE);
@@ -57,31 +57,28 @@ void parseArgs(int argc, char *argv[])
 }
 
 /*
- * Validates the port argument.
+ * Validates the port option argument.
  * Input:
  *  - port: port argument in string format
  */
-int validatePortArg(char *port)
+void parsePortArg(char *port)
 {
-    int is_zero = 1, port_length = strlen(port), port_parsed;
-    for (int i = 0; i < port_length; i++)
+    for (int i = 0; i < strlen(port); i++)
     {
         if (port[i] != '0')
         {
-            is_zero = 0;
-            break;
+            int port_parsed = atoi(port);
+            if (port_parsed > 0 && port_parsed <= 65535)
+            {
+                PORT = port_parsed;
+                return;
+            }
+            else
+            {
+                fprintf(stderr, "Invalid value for port argument\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
-
-    if (is_zero)
-        return 0;
-
-    port_parsed = atoi(port);
-    if (port_parsed > 0 && port_parsed <= 65535)
-        return port_parsed;
-    else
-    {
-        fprintf(stderr, "Invalid port value\n");
-        exit(EXIT_FAILURE);
-    }
+    PORT = 0;
 }

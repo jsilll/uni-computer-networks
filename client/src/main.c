@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,16 +7,16 @@
 #define GROUP_NUMBER 6
 
 int PORT = 58000 + GROUP_NUMBER;
-int IP = 0;
+unsigned long IP;
 
 void parseArgs(int argc, char *argv[]);
-int validateIPArg(char *port);
-int validatePortArg(char *port);
+void parseIPArg(char *ip);
+void parsePortArg(char *port);
 
 int main(int argc, char *argv[])
 {
     parseArgs(argc, argv);
-    printf("%d %d\n", IP, PORT);
+    printf("%ld %d\n", IP, PORT);
 }
 
 /*
@@ -32,23 +33,23 @@ void parseArgs(int argc, char *argv[])
         switch (opt)
         {
         case 'n':
-            IP = validateIPArg(optarg);
+            parseIPArg(optarg);
             break;
         case 'p':
-            PORT = validatePortArg(optarg);
+            parsePortArg(optarg);
             break;
         case ':':
-            fprintf(stderr, "Missing value for ip (-n) or port (-p) option\n");
+            fprintf(stderr, "Missing value for ip (-n) or for port (-p) option\n");
             exit(EXIT_FAILURE);
             break;
         case '?':
-            fprintf(stderr, "Unknown option: %c\n", optopt);
+            fprintf(stderr, "Unknown option: -%c\n", optopt);
             exit(EXIT_FAILURE);
             break;
         }
     }
 
-    for (; optind < argc; optind++)
+    if (optind < argc)
     {
         fprintf(stderr, "Unecessary extra argument: %s\n", argv[optind]);
         exit(EXIT_FAILURE);
@@ -56,42 +57,46 @@ void parseArgs(int argc, char *argv[])
 }
 
 /*
- * Validates the ip argument.
+ * Validates the ip option argument.
  * Input:
  *  - ip: ip argument in string format
  */
-int validateIPArg(char *ip)
+void parseIPArg(char *ip)
 {
-    // TODO
-    return atoi(ip);
+    unsigned long ip_parsed = 0;
+
+    if (!inet_pton(AF_INET, ip, &ip_parsed))
+    {
+        fprintf(stderr, "Invalid value for ip argument\n");
+        exit(EXIT_FAILURE);
+    }
+
+    IP = ip_parsed;
 }
 
 /*
- * Validates the port argument.
+ * Validates the port option argument.
  * Input:
  *  - port: port argument in string format
  */
-int validatePortArg(char *port)
+void parsePortArg(char *port)
 {
-    int is_zero = 1, port_length = strlen(port), port_parsed;
-    for (int i = 0; i < port_length; i++)
+    for (int i = 0; i < strlen(port); i++)
     {
         if (port[i] != '0')
         {
-            is_zero = 0;
-            break;
+            int port_parsed = atoi(port);
+            if (port_parsed > 0 && port_parsed <= 65535)
+            {
+                PORT = port_parsed;
+                return;
+            }
+            else
+            {
+                fprintf(stderr, "Invalid value for port argument\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
-
-    if (is_zero)
-        return 0;
-
-    port_parsed = atoi(port);
-    if (port_parsed > 0 && port_parsed <= 65535)
-        return port_parsed;
-    else
-    {
-        fprintf(stderr, "Invalid port value\n");
-        exit(EXIT_FAILURE);
-    }
+    PORT = 0;
 }
