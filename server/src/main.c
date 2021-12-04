@@ -9,6 +9,7 @@
 int PORT = 58000 + GROUP_NUMBER;
 bool VERBOSE = false;
 
+/* Argument Parsing Functions */
 void parseArgs(int argc, char *argv[]);
 int validatePortArg(char *port);
 
@@ -18,6 +19,12 @@ int main(int argc, char *argv[])
     printf("%d %d\n", PORT, VERBOSE);
 }
 
+/*
+ * Parses the initial arguments for the program.
+ * Input:
+ *  - argc: number of arguments in argv
+ *  - argv: array passed arguments
+ */
 void parseArgs(int argc, char *argv[])
 {
     int opt;
@@ -33,11 +40,11 @@ void parseArgs(int argc, char *argv[])
             break;
         case ':':
             fprintf(stderr, "Missing value for port (-p) option\n");
-            exit(1);
+            exit(EXIT_FAILURE);
             break;
         case '?':
             fprintf(stderr, "Unknown option: %c\n", optopt);
-            exit(1);
+            exit(EXIT_FAILURE);
             break;
         }
     }
@@ -45,10 +52,15 @@ void parseArgs(int argc, char *argv[])
     for (; optind < argc; optind++)
     {
         fprintf(stderr, "Unecessary extra argument: %s\n", argv[optind]);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
 
+/*
+ * Validates the port argument.
+ * Input:
+ *  - port: port argument in string format
+ */
 int validatePortArg(char *port)
 {
     int is_zero = 1, port_length = strlen(port), port_parsed;
@@ -70,6 +82,6 @@ int validatePortArg(char *port)
     else
     {
         fprintf(stderr, "Invalid port value\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
