@@ -1,12 +1,16 @@
+#include <errno.h>
+#include <getopt.h>
+#include <libgen.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #define GROUP_NUMBER 6
 
-int PORT = 58000 + GROUP_NUMBER;
+unsigned short int PORT = 58000 + GROUP_NUMBER;
 bool VERBOSE = false;
 
 /* Argument Parsing Functions */
