@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,7 @@
 #define GROUP_NUMBER 6
 
 int PORT = 58000 + GROUP_NUMBER;
-int VERBOSE = 0;
+bool VERBOSE = false;
 
 void parseArgs(int argc, char *argv[]);
 int validatePortArg(char *port);
@@ -28,7 +29,7 @@ void parseArgs(int argc, char *argv[])
             PORT = validatePortArg(optarg);
             break;
         case 'v':
-            VERBOSE = 1;
+            VERBOSE = true;
             break;
         case ':':
             fprintf(stderr, "Missing value for port (-p) option\n");
