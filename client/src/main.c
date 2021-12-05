@@ -19,8 +19,15 @@ unsigned long IP;
 void parseArgs(int argc, char *argv[]);
 void parseIPArg(char *ip);
 void parsePortArg(char *port);
-
 void parseCommand();
+int parseGID(char *GID);
+int parseUID(char *UID);
+int parsePassword(char *password);
+int parseGName(char *GName);
+int parseMessageText(char *message);
+int parseFName(char *FName);
+int parseMID(char *MID);
+
 void registerUser(int UID, char *pass);
 void unregisterUser(int UID, char *pass);
 void login(int UID, char *pass);
@@ -32,10 +39,8 @@ void unsubscribe(int GID);
 void my_groups();
 void selectGroup(int GID);
 void ulist();
-int parseGID(char *GID);
-int parseUID(char *UID);
-int parsePassword(char *password);
-int parseGName(char *GName);
+void post(char *message, char *fname);
+void retrieve(int MID);
 
 int main(int argc, char *argv[])
 {
@@ -110,6 +115,27 @@ void parseCommand()
                 selectGroup(GID);
                 break;
             }
+            else if (strcmp(op, "post") == 0)
+            {
+                if (parseMessageText(arg1) == -1)
+                {
+                    fprintf(stderr, "Invalid message text argument\n");
+                    break;
+                }
+                post(arg1, NULL);
+                break;
+            }
+            else if (strcmp(op, "retrieve") == 0 || strcmp(op, "r") == 0)
+            {
+                int MID;
+                if ((MID = parseMID(arg1)) == 0)
+                {
+                    fprintf(stderr, "Invalid MID argument\n");
+                    break;
+                }
+                retrieve(MID);
+                break;
+            }
             else
                 fprintf(stderr, "nao sei o que isso é (2)\n");
             break;
@@ -161,7 +187,7 @@ void parseCommand()
                 }
                 login(UID, arg2);
             }
-            if (strcmp(op, "subscribe") == 0 || strcmp(op, "s") == 0)
+            else if (strcmp(op, "subscribe") == 0 || strcmp(op, "s") == 0)
             {
                 int GID;
                 if ((GID = parseGID(arg1)) == -1)
@@ -175,6 +201,21 @@ void parseCommand()
                     break;
                 }
                 subscribe(GID, arg2);
+                break;
+            }
+            else if (strcmp(op, "post") == 0)
+            {
+                if (parseMessageText(arg1) == -1)
+                {
+                    fprintf(stderr, "Invalid message text argument\n");
+                    break;
+                }
+                else if (parseFName(arg2) == REG_NOMATCH)
+                {
+                    fprintf(stderr, "Invalid Fname argument\n");
+                    break;
+                }
+                post(arg1, arg2);
                 break;
             }
             else
@@ -368,6 +409,30 @@ void ulist()
     printf("ulist\n");
 }
 
+// • post \“text\” [Fname] – following this command the User establishes a
+// TCP session with the DS server and sends a message containing text (between
+// “ “), and possibly also a file with name Fname.
+// The confirmation of success (or not) should be displayed, including the posted
+// message’s ID MID. The TCP connection is then closed.
+void post(char *message, char *fname)
+{
+    printf("post\n");
+}
+
+// • retrieve MID or r MID – following this command the User establishes a
+// TCP session with the DS server and sends a message asking to receive up to 20
+// unread messages, starting with the one with identifier MID, for the active group
+// GID. The DS server only sends messages that include at least an author UID and
+// text – any incomplete messages are omitted.
+// After receiving the messages, the User application sends the DS a confirmation
+// and then closes the TCP session. The reply should be displayed as a numbered
+// list of text messages and, if available, the associated filenames and respective
+// sizes.
+void retrieve(int MID)
+{
+    printf("retrieve\n");
+}
+
 /* parseGID */
 int parseGID(char *GID)
 {
@@ -394,7 +459,7 @@ int parseUID(char *UID)
 int parsePassword(char *password)
 {
     regex_t re;
-    if (strlen(password) != 8 || regcomp(&re, "^[a-zA-Z0-9]*$", REG_EXTENDED | REG_NOSUB) != 0)
+    if (regcomp(&re, "^[a-zA-Z0-9]{8}$", REG_EXTENDED | REG_NOSUB) != 0)
         return REG_NOMATCH;
     int res = regexec(&re, password, 0, NULL, 0);
     regfree(&re);
@@ -404,11 +469,38 @@ int parsePassword(char *password)
 /* parsePassword */
 int parseGName(char *GName)
 {
-    printf("[%s]\n", GName);
     regex_t re;
-    if (strlen(GName) > 24 || regcomp(&re, "^[a-zA-Z0-9_-]*$", REG_EXTENDED | REG_NOSUB) != 0)
+    if (regcomp(&re, "^[a-zA-Z0-9_-]{1,24}$", REG_EXTENDED | REG_NOSUB) != 0)
         return REG_NOMATCH;
     int res = regexec(&re, GName, 0, NULL, 0);
+    regfree(&re);
+    return res;
+}
+
+/* parseMID */
+int parseMID(char *MID)
+{
+    if (strlen(MID) != 4)
+        return 0;
+    return atoi(MID);
+}
+
+/* parseMessageText */
+int parseMessageText(char *message)
+{
+    int len = strlen(message);
+    if (len > 242 || message[0] != '"' || message[len - 1] != '"')
+        return -1;
+    return 0;
+}
+
+/* parseFName */
+int parseFName(char *FName)
+{
+    regex_t re;
+    if (strlen(FName) > 24 || regcomp(&re, "^[a-zA-Z0-9_.-]+\\.[A-Za-z]{3}$", REG_EXTENDED | REG_NOSUB) != 0)
+        return REG_NOMATCH;
+    int res = regexec(&re, FName, 0, NULL, 0);
     regfree(&re);
     return res;
 }
