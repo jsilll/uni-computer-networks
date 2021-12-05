@@ -14,12 +14,12 @@ unsigned short int PORT = 58000 + GROUP_NUMBER;
 bool VERBOSE = false;
 
 /* Argument Parsing Functions */
-void parseArgs(int argc, char *argv[]);
+void parseExecArgs(int argc, char *argv[]);
 void parsePortArg(char *port);
 
 int main(int argc, char *argv[])
 {
-    parseArgs(argc, argv);
+    parseExecArgs(argc, argv);
     printf("%d %d\n", PORT, VERBOSE);
 }
 
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
  *  - argc: number of arguments in argv
  *  - argv: array passed arguments
  */
-void parseArgs(int argc, char *argv[])
+void parseExecArgs(int argc, char *argv[])
 {
     int opt;
     while ((opt = getopt(argc, argv, ":vp:")) != -1)

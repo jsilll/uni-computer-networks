@@ -8,4 +8,4 @@ cd ../
 cd client/
 make clean
 make all
-mv User ../
+mv user ../

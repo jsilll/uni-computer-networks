@@ -9,17 +9,51 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "centralized_messaging_api.h"
 
 #define GROUP_NUMBER 6
+
 #define MAX_INPUT_SIZE 128
+
+#define CMD_REGISTER "reg"
+#define CMD_UNREGISTER "unregister"
+#define CMD_UNREGISTER_SHORT "unr"
+#define CMD_LOGIN "login"
+#define CMD_LOGOUT "logout"
+#define CMD_EXIT "exit"
+#define CMD_GROUPS "groups"
+#define CMD_GROUPS_SHORT "gl"
+#define CMD_SUBSCRIBE "subscribe"
+#define CMD_SUBSCRIBE_SHORT "s"
+#define CMD_UNSUBSCRIBE "unsubscribe"
+#define CMD_UNSUBSCRIBE_SHORT "u"
+#define CMD_MY_GROUPS "my_groups"
+#define CMD_MY_GROUPS_SHORT "mgl"
+#define CMD_SELECT "select"
+#define CMD_SELECT_SHORT "sag"
+#define CMD_ULIST "ulist"
+#define CMD_ULIST_SHORT "ul"
+#define CMD_POST "post"
+#define CMD_RETRIEVE "retrieve"
+#define CMD_RETRIEVE_SHORT "r"
+
+#define MSG_UKNOWN_CMD "Uknown command\n"
+#define MSG_INVALID_GID "Invalid GID argument\n"
+#define MSG_INVALID_TXT_MSG "Invalid text message argument\n"
+#define MSG_INVALID_MID "Invalid MID argument\n"
+#define MSG_INVALID_UID "Invalid UID argument\n"
+#define MSG_INVALID_PASSWD "Invalid password argument\n"
+#define MSG_INVALID_GNAME "Invalid GName argument\n"
+#define MSG_INVALID_FNAME "Invalid Fname argument\n"
 
 unsigned short int PORT = 58000 + GROUP_NUMBER;
 unsigned long IP;
 
-void parseArgs(int argc, char *argv[]);
+void parseExecArgs(int argc, char *argv[]);
 void parseIPArg(char *ip);
 void parsePortArg(char *port);
-void parseCommand();
+
+void parseCommand(char *line);
 int parseGID(char *GID);
 int parseUID(char *UID);
 int parsePassword(char *password);
@@ -28,203 +62,13 @@ int parseMessageText(char *message);
 int parseFName(char *FName);
 int parseMID(char *MID);
 
-void registerUser(int UID, char *pass);
-void unregisterUser(int UID, char *pass);
-void login(int UID, char *pass);
-void logout();
-void exitClient();
-void groups();
-void subscribe(int GID, char *GIDName);
-void unsubscribe(int GID);
-void my_groups();
-void selectGroup(int GID);
-void ulist();
-void post(char *message, char *fname);
-void retrieve(int MID);
-
 int main(int argc, char *argv[])
 {
-    parseArgs(argc, argv);
-    printf("%ld %d\n", IP, PORT);
-    while (1)
-    {
-        parseCommand();
-    }
-}
-
-void parseCommand()
-{
+    parseExecArgs(argc, argv);
     char line[MAX_INPUT_SIZE];
-
     while (fgets(line, sizeof(line) / sizeof(char), stdin))
     {
-        char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE];
-        int numTokens = sscanf(line, "%s %s %s", op, arg1, arg2); // TODO: Mais argumentos do que os necessarios causam msg de erro?
-
-        switch (numTokens)
-        {
-        case 1:
-            if (strcmp(op, "logout") == 0)
-            {
-                logout();
-                break;
-            }
-            else if (strcmp(op, "exit") == 0)
-            {
-                exitClient();
-                break;
-            }
-            else if (strcmp(op, "groups") == 0 || strcmp(op, "gl") == 0)
-            {
-                groups();
-                break;
-            }
-            else if (strcmp(op, "my_groups") == 0 || strcmp(op, "mgl") == 0)
-            {
-                my_groups();
-                break;
-            }
-            else if (strcmp(op, "ulist") == 0 || strcmp(op, "ul") == 0)
-            {
-                ulist();
-                break;
-            }
-            else
-                fprintf(stderr, "nao sei o que isso é (1)\n");
-            break;
-        case 2:
-            if (strcmp(op, "unsubscribe") == 0 || strcmp(op, "u") == 0)
-            {
-                int GID;
-                if ((GID = parseGID(arg1)) <= 0)
-                {
-                    fprintf(stderr, "Invalid GID argument\n");
-                    break;
-                }
-                unsubscribe(GID);
-                break;
-            }
-            else if (strcmp(op, "select") == 0 || strcmp(op, "sag") == 0)
-            {
-                int GID;
-                if ((GID = parseGID(arg1)) <= 0)
-                {
-                    fprintf(stderr, "Invalid GID argument\n");
-                    break;
-                }
-                selectGroup(GID);
-                break;
-            }
-            else if (strcmp(op, "post") == 0)
-            {
-                if (parseMessageText(arg1) == -1)
-                {
-                    fprintf(stderr, "Invalid message text argument\n");
-                    break;
-                }
-                post(arg1, NULL);
-                break;
-            }
-            else if (strcmp(op, "retrieve") == 0 || strcmp(op, "r") == 0)
-            {
-                int MID;
-                if ((MID = parseMID(arg1)) == 0)
-                {
-                    fprintf(stderr, "Invalid MID argument\n");
-                    break;
-                }
-                retrieve(MID);
-                break;
-            }
-            else
-                fprintf(stderr, "nao sei o que isso é (2)\n");
-            break;
-        case 3:
-            if (strcmp(op, "reg") == 0)
-            {
-                int UID;
-                if ((UID = parseUID(arg1)) == -1)
-                {
-                    fprintf(stderr, "Invalid UID argument\n");
-                    break;
-                }
-                else if (parsePassword(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, "Invalid password argument\n");
-                    break;
-                }
-                registerUser(UID, arg2);
-                break;
-            }
-            else if (strcmp(op, "unregister") == 0 || strcmp(op, "unr") == 0)
-            {
-                int UID;
-                if ((UID = parseUID(arg1)) == -1)
-                {
-                    fprintf(stderr, "Invalid UID argument\n");
-                    break;
-                }
-                else if (parsePassword(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, "Invalid password argument\n");
-                    break;
-                }
-                unregisterUser(UID, arg2);
-                break;
-            }
-            else if (strcmp(op, "login") == 0)
-            {
-                int UID;
-                if ((UID = parseUID(arg1)) == -1)
-                {
-                    fprintf(stderr, "Invalid UID argument\n");
-                    break;
-                }
-                else if (parsePassword(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, "Invalid password argument\n");
-                    break;
-                }
-                login(UID, arg2);
-            }
-            else if (strcmp(op, "subscribe") == 0 || strcmp(op, "s") == 0)
-            {
-                int GID;
-                if ((GID = parseGID(arg1)) == -1)
-                {
-                    fprintf(stderr, "Invalid GID argument\n");
-                    break;
-                }
-                else if (parseGName(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, "Invalid GName argument\n");
-                    break;
-                }
-                subscribe(GID, arg2);
-                break;
-            }
-            else if (strcmp(op, "post") == 0)
-            {
-                if (parseMessageText(arg1) == -1)
-                {
-                    fprintf(stderr, "Invalid message text argument\n");
-                    break;
-                }
-                else if (parseFName(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, "Invalid Fname argument\n");
-                    break;
-                }
-                post(arg1, arg2);
-                break;
-            }
-            else
-                fprintf(stderr, "nao sei o que isso é (3)\n");
-            break;
-        default:
-            fprintf(stderr, "nao sei o que isso é\n");
-            continue;
-        }
+        parseCommand(line);
     }
 }
 
@@ -234,7 +78,7 @@ void parseCommand()
  *  - argc: number of arguments in argv
  *  - argv: array passed arguments
  */
-void parseArgs(int argc, char *argv[])
+void parseExecArgs(int argc, char *argv[])
 {
     int opt;
     while ((opt = getopt(argc, argv, ":n:p:")) != -1)
@@ -308,129 +152,130 @@ void parsePortArg(char *port)
     PORT = 0;
 }
 
-// • reg UID pass – following this command the User application sends a
-// message to the DS server, using the UDP protocol, asking to register a new user,
-// sending its identification UID and a selected password pass.
-// The result of the DS registration request should be displayed.
-void registerUser(int UID, char *pass)
+/* parseCommand */
+void parseCommand(char *line)
 {
-    printf("registerUser\n");
-}
+    char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE];
+    int numTokens = sscanf(line, "%s %s %s", op, arg1, arg2); // TODO: Mais argumentos do que os necessarios causam msg de erro?
 
-// • unregister UID pass or unr UID pass – the User application sends
-// a message to the DS server, using the UDP protocol, asking to unregister the
-// user with identification UID and password pass. The DS server should
-// unsubscribe this user from all groups in which it was subscribed. The result of
-// the unregister request should be displayed.
-// The commands related to user identification and session termination are:
-void unregisterUser(int UID, char *pass)
-{
-    printf("unrgesterUser\n");
-}
+    switch (numTokens)
+    {
+    case 1:
+        if (!strcmp(op, CMD_LOGOUT))
+            return logout();
+        else if (!strcmp(op, CMD_EXIT))
+            return exitClient();
+        else if (!strcmp(op, CMD_GROUPS) || !strcmp(op, CMD_GROUPS_SHORT))
+            return groups();
+        else if (!strcmp(op, CMD_MY_GROUPS) || !strcmp(op, CMD_MY_GROUPS_SHORT))
+            return my_groups();
+        else if (!strcmp(op, CMD_ULIST) || !strcmp(op, CMD_ULIST_SHORT))
+            return ulist();
+        else
+        {
+            fprintf(stderr, MSG_UKNOWN_CMD);
+            return;
+        }
 
-// • login UID pass – with this command the User application sends a
-// message in UDP to the DS to validate the user credentials: UID and pass. The
-// result of the DS validation should be displayed to the user.
-// The User application memorizes the UID in usage.
-void login(int UID, char *pass)
-{
-    printf("login\n");
-}
+    case 2:
+        if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT))
+        {
+            int GID;
+            if ((GID = parseGID(arg1)) <= 0)
+            {
+                fprintf(stderr, MSG_INVALID_GID);
+                return;
+            }
+            return unsubscribe(GID);
+        }
+        else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT))
+        {
+            int GID;
+            if ((GID = parseGID(arg1)) <= 0)
+            {
+                fprintf(stderr, MSG_INVALID_GID);
+                return;
+            }
+            return selectGroup(GID);
+        }
+        else if (!strcmp(op, CMD_POST))
+        {
+            if (parseMessageText(arg1) == -1)
+                fprintf(stderr, MSG_INVALID_TXT_MSG);
+            else
+                return post(arg1, NULL);
+        }
+        else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
+        {
+            int MID;
+            if (!(MID = parseMID(arg1)))
+                fprintf(stderr, MSG_INVALID_TXT_MSG);
+            else
+                return retrieve(MID);
+        }
+        else
+            fprintf(stderr, MSG_UKNOWN_CMD);
 
-// • logout – the User application (locally) forgets the credentials of the
-// previously logged in user. A new login command, with different credentials, can
-// then be issued.
-void logout()
-{
-    printf("logout\n");
-}
+        return;
 
-// • exit – the User application terminates, after making that all TCP connections
-// are closed.
-// 04/12/2021
-// The commands related to group management are listed below.
-void exitClient()
-{
-    printf("exit\n");
-}
+    case 3:
+        if (!strcmp(op, CMD_REGISTER))
+        {
+            int UID;
+            if ((UID = parseUID(arg1)) == -1)
+                fprintf(stderr, MSG_INVALID_UID);
+            else if (parsePassword(arg2) == REG_NOMATCH)
+                fprintf(stderr, MSG_INVALID_PASSWD);
+            else
+                return registerUser(UID, arg2);
+        }
+        else if (!strcmp(op, CMD_REGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
+        {
+            int UID;
+            if ((UID = parseUID(arg1)) == -1)
+                fprintf(stderr, MSG_INVALID_UID);
+            else if (parsePassword(arg2) == REG_NOMATCH)
+                fprintf(stderr, MSG_INVALID_PASSWD);
+            else
+                return unregisterUser(UID, arg2);
+        }
+        else if (!strcmp(op, CMD_LOGIN))
+        {
+            int UID;
+            if ((UID = parseUID(arg1)) == -1)
+                fprintf(stderr, MSG_INVALID_UID);
+            else if (parsePassword(arg2) == REG_NOMATCH)
+                fprintf(stderr, MSG_INVALID_PASSWD);
+            else
+                return login(UID, arg2);
+        }
+        else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT))
+        {
+            int GID;
+            if ((GID = parseGID(arg1)) == -1)
+                fprintf(stderr, MSG_INVALID_GID);
+            else if (parseGName(arg2) == REG_NOMATCH)
+                fprintf(stderr, MSG_INVALID_GNAME);
+            else
+                return subscribe(GID, arg2);
+        }
+        else if (!strcmp(op, CMD_POST))
+        {
+            if (parseMessageText(arg1) == -1)
+                fprintf(stderr, MSG_INVALID_TXT_MSG);
+            else if (parseFName(arg2) == REG_NOMATCH)
+                fprintf(stderr, MSG_INVALID_FNAME);
+            else
+                return post(arg1, arg2);
+        }
+        else
+            fprintf(stderr, MSG_UKNOWN_CMD);
 
-// • groups or gl – following this command the User application sends the DS
-// server a message in UDP asking for the list of available groups. The reply
-// should be displayed as a list of group IDs (GID) and names (GName).
-// These following group management commands can only be issued after a user has
-// logged in:
-void groups()
-{
-    printf("groups\n");
-}
+        return;
 
-// • subscribe GID GName or s GID GName – following this command the
-// User application sends the DS server a message in UDP, including the user’s
-// UID, asking to subscribe the desired group, identified by its GID and GName. If
-// GID = 0 this corresponds to a request to create and subscribe to a new group
-// named GName. The confirmation of successful subscription (or not) should be
-// displayed.
-void subscribe(int GID, char *GIDName)
-{
-    printf("subscribe\n");
-}
-
-// • unsubscribe GID or u GID – following this command the User
-// application sends the DS server a message in UDP, including the user’s UID,
-// asking to unsubscribe group GID. The confirmation of success (or not) should
-// be displayed.
-void unsubscribe(int GID)
-{
-    printf("unsubscribe\n");
-}
-
-// • my_groups or mgl – following this command the User application sends
-// the DS server a message in UDP, including the user’s UID, asking the list of
-// groups to which this user has already subscribed. The reply should be displayed
-// as a list of group IDs and names.
-void my_groups()
-{
-    printf("my_groups\n");
-}
-
-// • select GID or sag GID – following this command the User application
-// locally memorizes GID as the ID of the active group. Subsequent ulist, post
-// and retrieve messaging commands refer to this GID.
-void selectGroup(int GID)
-{
-    printf("select\n");
-}
-
-// • ulist or ul – following this command the User application sends the DS
-// server a message in TCP asking for the list of user UIDs that are subscribed to
-// the currently subscribed group GID.
-void ulist()
-{
-    printf("ulist\n");
-}
-
-// • post \“text\” [Fname] – following this command the User establishes a
-// TCP session with the DS server and sends a message containing text (between
-// “ “), and possibly also a file with name Fname.
-// The confirmation of success (or not) should be displayed, including the posted
-// message’s ID MID. The TCP connection is then closed.
-void post(char *message, char *fname) // TODO file size and data
-{
-    printf("post\n");
-}
-
-// • retrieve MID or r MID – following this command the User establishes a
-// TCP session with the DS server and sends a message asking to receive up to 20
-// unread messages, starting with the one with identifier MID, for the active group
-// GID. The DS server only sends messages that include at least an author UID and
-// text – any incomplete messages are omitted.
-// After receiving the messages, the User application sends the DS a confirmation
-// and then closes the TCP session. The reply should be displayed as a numbered
-// list of text messages and, if available, the associated filenames and respective
-// sizes.
-void retrieve(int MID)
-{
-    printf("retrieve\n");
+    default:
+        fprintf(stderr, MSG_UKNOWN_CMD);
+    }
 }
 
 /* parseGID */
@@ -450,7 +295,7 @@ int parseUID(char *UID)
     if (strlen(UID) != 5)
         return -1;
     int uid_parsed = atoi(UID);
-    if (uid_parsed == 0 && strcmp(UID, "00000") != 0)
+    if (!uid_parsed && strcmp(UID, "00000") != 0)
         return -1;
     return uid_parsed;
 }
@@ -466,7 +311,7 @@ int parsePassword(char *password)
     return res;
 }
 
-/* parsePassword */
+/* parseGName */
 int parseGName(char *GName)
 {
     regex_t re;
