@@ -414,7 +414,7 @@ void ulist()
 // “ “), and possibly also a file with name Fname.
 // The confirmation of success (or not) should be displayed, including the posted
 // message’s ID MID. The TCP connection is then closed.
-void post(char *message, char *fname)
+void post(char *message, char *fname) // TODO file size and data
 {
     printf("post\n");
 }
