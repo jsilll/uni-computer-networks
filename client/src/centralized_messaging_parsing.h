@@ -118,7 +118,7 @@ int parseMessageText(char *message)
  */
 int parseFName(char *FName)
 {
-    regex_t re;
+    regex_t re; // TODO: make this static const
     if (strlen(FName) > 24 || regcomp(&re, "^[a-zA-Z0-9_.-]+[.]{1}[A-Za-z]{3}$", REG_EXTENDED | REG_NOSUB) != 0)
         return REG_NOMATCH;
     int res = regexec(&re, FName, 0, NULL, 0);

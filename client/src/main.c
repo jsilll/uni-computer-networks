@@ -15,7 +15,7 @@
 #include "client_interface.h"
 
 #define GROUP_NUMBER 6
-#define MAX_INPUT_SIZE 128
+#define MAX_INPUT_SIZE TSIZE + 32 /* 'post_"[240]"_[24]' */
 
 unsigned short int PORT = 58000 + GROUP_NUMBER;
 unsigned long IP;
