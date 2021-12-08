@@ -1,7 +1,1 @@
-*.o
-*.bin
-.vscode/
-.idea/
 cmake-build-debug/
-DS
-user
