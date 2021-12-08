@@ -21,8 +21,8 @@ unsigned long IP;
 
 /* Execution Arguments Parsing */
 void parseExecArgs(int argc, char *argv[]);
-void parseIPArg(char *ip);
-void parsePortArg(char *port);
+unsigned long parseIPArg(char *ip);
+unsigned short int parsePortArg(char *port);
 
 /* Commands Parsing */
 void parseCommand(char *line);
@@ -53,21 +53,21 @@ void parseExecArgs(int argc, char *argv[])
     {
         switch (opt)
         {
-            case 'n':
-                IP = parseIPArg(optarg);
-                break;
-            case 'p':
-                PORT = parsePortArg(optarg);
-                break;
-            case ':':
-                fprintf(stderr, "Missing value for ip (-n) or for port (-p) option\n");
-                exit(EXIT_FAILURE);
-            case '?':
-                fprintf(stderr, "Unknown option: -%c\n", optopt);
-                exit(EXIT_FAILURE);
-            default:
-                fprintf(stderr, "Unknown error\n");
-                exit(EXIT_FAILURE);
+        case 'n':
+            IP = parseIPArg(optarg);
+            break;
+        case 'p':
+            PORT = parsePortArg(optarg);
+            break;
+        case ':':
+            fprintf(stderr, "Missing value for ip (-n) or for port (-p) option\n");
+            exit(EXIT_FAILURE);
+        case '?':
+            fprintf(stderr, "Unknown option: -%c\n", optopt);
+            exit(EXIT_FAILURE);
+        default:
+            fprintf(stderr, "Unknown error\n");
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -132,145 +132,145 @@ void parseCommand(char *line)
 
     switch (numTokens)
     {
-        case 1:
-            if (!strcmp(op, CMD_LOGOUT))
-            {
-                return logout();
-            }
-            else if (!strcmp(op, CMD_EXIT))
-            {
-                return exitClient();
-            }
-            else if (!strcmp(op, CMD_GROUPS) || !strcmp(op, CMD_GROUPS_SHORT))
-            {
-                return groups();
-            }
-            else if (!strcmp(op, CMD_MY_GROUPS) || !strcmp(op, CMD_MY_GROUPS_SHORT))
-            {
-                return my_groups();
-            }
-            else if (!strcmp(op, CMD_ULIST) || !strcmp(op, CMD_ULIST_SHORT))
-            {
-                return ulist();
-            }
-            fprintf(stderr, MSG_UNKNOWN_CMD);
-            return;
+    case 1:
+        if (!strcmp(op, CMD_LOGOUT))
+        {
+            return logout();
+        }
+        else if (!strcmp(op, CMD_EXIT))
+        {
+            return exitClient();
+        }
+        else if (!strcmp(op, CMD_GROUPS) || !strcmp(op, CMD_GROUPS_SHORT))
+        {
+            return groups();
+        }
+        else if (!strcmp(op, CMD_MY_GROUPS) || !strcmp(op, CMD_MY_GROUPS_SHORT))
+        {
+            return my_groups();
+        }
+        else if (!strcmp(op, CMD_ULIST) || !strcmp(op, CMD_ULIST_SHORT))
+        {
+            return ulist();
+        }
+        fprintf(stderr, MSG_UNKNOWN_CMD);
+        return;
 
-        case 2:
-            if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT))
+    case 2:
+        if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT))
+        {
+            if ((GID = parseGID(arg1)) <= 0)
             {
-                if ((GID = parseGID(arg1)) <= 0)
-                {
-                    fprintf(stderr, MSG_INVALID_GID);
-                    return;
-                }
-                return unsubscribe(GID);
+                fprintf(stderr, MSG_INVALID_GID);
+                return;
             }
-            else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT))
+            return unsubscribe(GID);
+        }
+        else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT))
+        {
+            if ((GID = parseGID(arg1)) <= 0)
             {
-                if ((GID = parseGID(arg1)) <= 0)
-                {
-                    fprintf(stderr, MSG_INVALID_GID);
-                    return;
-                }
-                return selectGroup(GID);
+                fprintf(stderr, MSG_INVALID_GID);
+                return;
             }
-            else if (!strcmp(op, CMD_POST))
+            return selectGroup(GID);
+        }
+        else if (!strcmp(op, CMD_POST))
+        {
+            if (parseMessageText(arg1) == -1)
             {
-                if (parseMessageText(arg1) == -1)
-                {
-                    fprintf(stderr, MSG_INVALID_TXT_MSG);
-                    return;
-                }
-                return post(arg1, NULL);
+                fprintf(stderr, MSG_INVALID_TXT_MSG);
+                return;
             }
-            else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
+            return post(arg1, NULL);
+        }
+        else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
+        {
+            if (!(MID = parseMID(arg1)))
             {
-                if (!(MID = parseMID(arg1)))
-                {
-                    fprintf(stderr, MSG_INVALID_MID);
-                    return;
-                }
-                return retrieve(MID);
+                fprintf(stderr, MSG_INVALID_MID);
+                return;
             }
-            fprintf(stderr, MSG_UNKNOWN_CMD);
-            return;
+            return retrieve(MID);
+        }
+        fprintf(stderr, MSG_UNKNOWN_CMD);
+        return;
 
-        case 3:
-            if (!strcmp(op, CMD_REGISTER))
+    case 3:
+        if (!strcmp(op, CMD_REGISTER))
+        {
+            if ((UID = parseUID(arg1)) == -1)
             {
-                if ((UID = parseUID(arg1)) == -1)
-                {
-                    fprintf(stderr, MSG_INVALID_UID);
-                    return;
-                }
-                else if (parsePassword(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, MSG_INVALID_PASSWD);
-                    return;
-                }
-                return registerUser(UID, arg2);
+                fprintf(stderr, MSG_INVALID_UID);
+                return;
             }
-            else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
+            else if (parsePassword(arg2) == REG_NOMATCH)
             {
-                if ((UID = parseUID(arg1)) == -1)
-                {
-                    fprintf(stderr, MSG_INVALID_UID);
-                    return;
-                }
-                else if (parsePassword(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, MSG_INVALID_PASSWD);
-                    return;
-                }
-                return unregisterUser(UID, arg2);
+                fprintf(stderr, MSG_INVALID_PASSWD);
+                return;
             }
-            else if (!strcmp(op, CMD_LOGIN))
+            return registerUser(UID, arg2);
+        }
+        else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
+        {
+            if ((UID = parseUID(arg1)) == -1)
             {
-                if ((UID = parseUID(arg1)) == -1)
-                {
-                    fprintf(stderr, MSG_INVALID_UID);
-                    return;
-                }
-                else if (parsePassword(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, MSG_INVALID_PASSWD);
-                    return;
-                }
-                return login(UID, arg2);
+                fprintf(stderr, MSG_INVALID_UID);
+                return;
             }
-            else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT))
+            else if (parsePassword(arg2) == REG_NOMATCH)
             {
-                if ((GID = parseGID(arg1)) == -1)
-                {
-                    fprintf(stderr, MSG_INVALID_GID);
-                    return;
-                }
-                else if (parseGName(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, MSG_INVALID_GNAME);
-                    return;
-                }
-                return subscribe(GID, arg2);
+                fprintf(stderr, MSG_INVALID_PASSWD);
+                return;
             }
-            else if (!strcmp(op, CMD_POST))
+            return unregisterUser(UID, arg2);
+        }
+        else if (!strcmp(op, CMD_LOGIN))
+        {
+            if ((UID = parseUID(arg1)) == -1)
             {
-                if (parseMessageText(arg1) == -1)
-                {
-                    fprintf(stderr, MSG_INVALID_TXT_MSG);
-                    return;
-                }
-                else if (parseFName(arg2) == REG_NOMATCH)
-                {
-                    fprintf(stderr, MSG_INVALID_FNAME);
-                    return;
-                }
-                return post(arg1, arg2);
+                fprintf(stderr, MSG_INVALID_UID);
+                return;
             }
-            fprintf(stderr, MSG_UNKNOWN_CMD);
-            return;
+            else if (parsePassword(arg2) == REG_NOMATCH)
+            {
+                fprintf(stderr, MSG_INVALID_PASSWD);
+                return;
+            }
+            return login(UID, arg2);
+        }
+        else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT))
+        {
+            if ((GID = parseGID(arg1)) == -1)
+            {
+                fprintf(stderr, MSG_INVALID_GID);
+                return;
+            }
+            else if (parseGName(arg2) == REG_NOMATCH)
+            {
+                fprintf(stderr, MSG_INVALID_GNAME);
+                return;
+            }
+            return subscribe(GID, arg2);
+        }
+        else if (!strcmp(op, CMD_POST))
+        {
+            if (parseMessageText(arg1) == -1)
+            {
+                fprintf(stderr, MSG_INVALID_TXT_MSG);
+                return;
+            }
+            else if (parseFName(arg2) == REG_NOMATCH)
+            {
+                fprintf(stderr, MSG_INVALID_FNAME);
+                return;
+            }
+            return post(arg1, arg2);
+        }
+        fprintf(stderr, MSG_UNKNOWN_CMD);
+        return;
 
-        default:
-            fprintf(stderr, MSG_UNKNOWN_CMD);
+    default:
+        fprintf(stderr, MSG_UNKNOWN_CMD);
     }
 }
