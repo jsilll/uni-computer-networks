@@ -7,6 +7,10 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #define GROUP_NUMBER 6
 #define BOOL_TO_STR(b) (b ? "On" : "Off")
@@ -23,7 +27,42 @@ int main(int argc, char* argv[])
 	parseExecArgs(argc, argv);
 	printf("Centralized Messaging Server Initialized\n");
 	printf("PORT: %d VERBOSE: %s\n", PORT, BOOL_TO_STR(VERBOSE));
-	return 1;
+
+	int fd, errcode;
+	struct addrinfo hints, *res;
+	struct sockaddr_in addr;
+	socklen_t addrlen = sizeof(addr);
+	char buffer[128];
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if ( fd == -1) /* error */ exit(1);
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET; // IPv4
+	hints.ai_socktype = SOCK_DGRAM; // UDP Socket
+	hints.ai_flags = AI_PASSIVE;
+
+	char PORT_BUFFER[128];
+	sprintf(PORT_BUFFER, "%d", PORT);
+	errcode = getaddrinfo(NULL, PORT_BUFFER, &hints, &res);
+	if (errcode != 0) /* error */ exit(1);
+
+	ssize_t n = bind(fd, res->ai_addr, res->ai_addrlen);
+	if (n == -1) /* error */ exit(1);
+
+	while(1) {
+		n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+		if (n == -1) /* error */ exit(1);
+
+		write(1, "received: ", 10); write(1, buffer, n);
+		// n = sendto(fd, buffer, n, 0,(struct sockaddr*)&addr, addrlen);
+		// if (n == -1) /* error */ exit(1);
+	}
+
+	// TODO SIGINT Handler
+	freeaddrinfo(res);
+	close(fd);
+
 }
 
 /*

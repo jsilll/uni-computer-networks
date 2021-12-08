@@ -8,30 +8,72 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 #include "centralized_messaging_api.h"
 #include "centralized_messaging_parsing.h"
 #include "client_interface.h"
 
-#define GROUP_NUMBER 6
-#define MAX_INPUT_SIZE T_SIZE + 32 /* 'post_"[240]"_[24]' */
+#define DEFAULT_PORT "58006"
+#define MAX_INPUT_SIZE T_SIZE + 32 /* 'post "240" 24' */
 
-unsigned short int PORT = 58000 + GROUP_NUMBER;
-unsigned long IP;
+char PORT[MAX_INPUT_SIZE], IP[MAX_INPUT_SIZE];
 
 /* Execution Arguments Parsing */
 void parseExecArgs(int argc, char* argv[]);
-unsigned long parseIPArg(char* ip);
-unsigned short int parsePortArg(char* port);
+void parseIPArg(char* ip);
+void parsePortArg(char* port);
 
 /* Commands Parsing */
 void parseCommand(char* line);
 
+void getComputerIP()
+{
+	struct addrinfo hints, * client_addrinfo, * p;
+	struct in_addr* addr;
+	int errcode;
+	char buffer[INET_ADDRSTRLEN];
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_CANONNAME;
+
+	// Get Host Name
+	char hostname_buffer[128];
+	if (gethostname(hostname_buffer, 128) == -1)
+		fprintf(stderr, "error: %s\n", strerror(errno));
+	// else
+		// printf("host name: %s\n", hostname_buffer);
+
+	// Get Address
+	if ((errcode = getaddrinfo(hostname_buffer, NULL, &hints, &client_addrinfo)))
+	{
+		fprintf(stderr, "error: getaddrinfo: %s \n", gai_strerror(errcode));
+		exit(EXIT_FAILURE);
+	}
+	else
+	{
+		// printf("canonical hostname: %s\n", client_addrinfo->ai_canonname);
+		addr = &((struct sockaddr_in*)client_addrinfo->ai_addr)->sin_addr; // IP
+		strcpy(IP, inet_ntop(client_addrinfo->ai_family, addr, buffer, sizeof buffer));
+		return;
+	}
+}
+
 int main(int argc, char* argv[])
 {
+	strcpy(PORT, DEFAULT_PORT); // PORT -> 58006
+	getComputerIP(); // IP -> "192.168.1.100"
+
 	parseExecArgs(argc, argv);
+
 	printf("Centralized Messaging Client Initialized\n");
-	printf("PORT: %d IP: %ld\n", PORT, IP);
+	printf("PORT: %s IP: %s\n", PORT, IP);
+
+	setupConnection(IP, PORT);
+
 	char line[MAX_INPUT_SIZE];
 	while (fgets(line, sizeof(line) / sizeof(char), stdin))
 	{
@@ -54,10 +96,12 @@ void parseExecArgs(int argc, char* argv[])
 		switch (opt)
 		{
 		case 'n':
-			IP = parseIPArg(optarg);
+			parseIPArg(optarg);
+			strcpy(IP, optarg);
 			break;
 		case 'p':
-			PORT = parsePortArg(optarg);
+			parsePortArg(optarg);
+			strcpy(PORT, optarg);
 			break;
 		case ':':
 			fprintf(stderr, "Missing value for ip (-n) or for port (-p) option\n");
@@ -83,7 +127,7 @@ void parseExecArgs(int argc, char* argv[])
  *
  * @param ip ip argument in string format
  */
-unsigned long parseIPArg(char* ip)
+void parseIPArg(char* ip)
 {
 	unsigned long ip_parsed = 0;
 	if (!inet_pton(AF_INET, ip, &ip_parsed))
@@ -91,7 +135,6 @@ unsigned long parseIPArg(char* ip)
 		fprintf(stderr, "Invalid value for ip argument\n");
 		exit(EXIT_FAILURE);
 	}
-	return ip_parsed;
 }
 
 /**
@@ -99,23 +142,21 @@ unsigned long parseIPArg(char* ip)
  *
  * @param port port argument in string format
  */
-unsigned short int parsePortArg(char* port)
+void parsePortArg(char* port)
 {
 	for (int i = 0; i < strlen(port); i++)
 	{
 		if (port[i] != '0')
 		{
-			char* ptr;
-			int port_parsed = strtol(port, &ptr, 10);
+			int port_parsed = strtol(port, NULL, 10);
 			if (port_parsed <= 0 || port_parsed > 65535)
 			{
 				fprintf(stderr, "Invalid value for port argument\n");
 				exit(EXIT_FAILURE);
 			}
-			return port_parsed;
+			return;
 		}
 	}
-	return 0;
 }
 
 /**
@@ -152,6 +193,14 @@ void parseCommand(char* line)
 		else if (!strcmp(op, CMD_ULIST) || !strcmp(op, CMD_ULIST_SHORT))
 		{
 			return ulist();
+		}
+		else if (!strcmp(op, CMD_SHOW_UID) || !strcmp(op, CMD_SHOW_UID_SHORT))
+		{
+			return showUID();
+		}
+		else if (!strcmp(op, CMD_SHOW_GID) || !strcmp(op, CMD_SHOW_GID_SHORT))
+		{
+			return showGID();
 		}
 		fprintf(stderr, MSG_UNKNOWN_CMD);
 		return;

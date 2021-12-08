@@ -18,8 +18,7 @@ int parseGID(char* GID)
 {
 	if (strlen(GID) == 1 && GID[0] == '0')
 		return 0;
-	char* ptr;
-	int gid = strtol(GID, &ptr, 10);
+	int gid = strtol(GID, NULL, 10);
 	if (strlen(GID) == 2 && gid != 0)
 		return gid;
 	return -1;
@@ -36,8 +35,7 @@ int parseUID(char* UID)
 {
 	if (strlen(UID) != 5)
 		return -1;
-	char* ptr;
-	int uid_parsed = strtol(UID, &ptr, 10);
+	int uid_parsed = strtol(UID, NULL, 10);
 	if (!uid_parsed && strcmp(UID, "00000") != 0)
 		return -1;
 	return uid_parsed;
@@ -90,8 +88,7 @@ int parseMID(char* MID)
 {
 	if (strlen(MID) != 4)
 		return 0;
-	char* ptr;
-	return strtol(MID, &ptr, 10);
+	return strtol(MID, NULL, 10);
 }
 
 /**
