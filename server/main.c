@@ -29,13 +29,13 @@ int main(int argc, char* argv[])
 	printf("PORT: %d VERBOSE: %s\n", PORT, BOOL_TO_STR(VERBOSE));
 
 	int fd, errcode;
-	struct addrinfo hints, *res;
+	struct addrinfo hints, * res;
 	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
 	char buffer[128];
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if ( fd == -1) /* error */ exit(1);
+	if (fd == -1) /* error */ exit(1);
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_INET; // IPv4
@@ -50,11 +50,13 @@ int main(int argc, char* argv[])
 	ssize_t n = bind(fd, res->ai_addr, res->ai_addrlen);
 	if (n == -1) /* error */ exit(1);
 
-	while(1) {
+	while (1)
+	{
 		n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
 		if (n == -1) /* error */ exit(1);
 
-		write(1, "received: ", 10); write(1, buffer, n);
+		write(1, "received: ", 10);
+		write(1, buffer, n);
 		// n = sendto(fd, buffer, n, 0,(struct sockaddr*)&addr, addrlen);
 		// if (n == -1) /* error */ exit(1);
 	}

@@ -1,12 +1,10 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <getopt.h>
-#include <libgen.h>
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -28,35 +26,31 @@ void parsePortArg(char* port);
 /* Commands Parsing */
 void parseCommand(char* line);
 
-void getComputerIP()
+void getLocalIP()
 {
-	struct addrinfo hints, * client_addrinfo, * p;
-	struct in_addr* addr;
-	int errcode;
-	char buffer[INET_ADDRSTRLEN];
+	struct addrinfo hints;
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_CANONNAME;
 
-	// Get Host Name
 	char hostname_buffer[128];
 	if (gethostname(hostname_buffer, 128) == -1)
 		fprintf(stderr, "error: %s\n", strerror(errno));
-	// else
-		// printf("host name: %s\n", hostname_buffer);
 
-	// Get Address
+	int errcode;
+	struct addrinfo* client_addrinfo;
 	if ((errcode = getaddrinfo(hostname_buffer, NULL, &hints, &client_addrinfo)))
 	{
-		fprintf(stderr, "error: getaddrinfo: %s \n", gai_strerror(errcode));
+		fprintf(stderr, "error: getaddrinfo: %s\n", gai_strerror(errcode));
 		exit(EXIT_FAILURE);
 	}
 	else
 	{
-		// printf("canonical hostname: %s\n", client_addrinfo->ai_canonname);
-		addr = &((struct sockaddr_in*)client_addrinfo->ai_addr)->sin_addr; // IP
+		char buffer[INET_ADDRSTRLEN];
+
+		struct in_addr* addr = &((struct sockaddr_in*)client_addrinfo->ai_addr)->sin_addr;
 		strcpy(IP, inet_ntop(client_addrinfo->ai_family, addr, buffer, sizeof buffer));
 		return;
 	}
@@ -65,14 +59,14 @@ void getComputerIP()
 int main(int argc, char* argv[])
 {
 	strcpy(PORT, DEFAULT_PORT); // PORT -> 58006
-	getComputerIP(); // IP -> "192.168.1.100"
+	getLocalIP(); // IP -> "192.168.1.100"
 
 	parseExecArgs(argc, argv);
 
 	printf("Centralized Messaging Client Initialized\n");
 	printf("PORT: %s IP: %s\n", PORT, IP);
 
-	setupConnection(IP, PORT);
+	setupSocketUDP(IP, PORT);
 
 	char line[MAX_INPUT_SIZE];
 	while (fgets(line, sizeof(line) / sizeof(char), stdin))

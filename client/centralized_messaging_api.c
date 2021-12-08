@@ -13,33 +13,38 @@ struct addrinfo* server_address;
 /**
  * @brief Sets up the connection
  *
- * @param IP
- * @param PORT
+ * @param ip
+ * @param port
  */
-void setupConnection(char* IP, char* PORT)
+void setupSocketUDP(char* ip, char* port)
 {
-	fd_udp = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
-	if (fd_udp == -1) {
-		fprintf(stderr, "error\n");
+	if ((fd_udp = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		fprintf(stderr, "Error creating UDP socket.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_INET;      //IPv4
-	hints.ai_socktype = SOCK_DGRAM; //UDP socket
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
 
-	int errcode = getaddrinfo(IP, PORT, &hints, &server_address);
-	if (errcode != 0)
+	int errcode;
+	if ((errcode = getaddrinfo(ip, port, &hints, &server_address)) != 0)
 	{
-		fprintf(stderr, "error\n");
+		fprintf(stderr, "Error on getaddrinfo: %s\n", gai_strerror(errcode));
 		exit(EXIT_FAILURE);
 	}
 }
 
-void sendCommand(char* msg)
+/**
+ * @brief Sends a command to the server using UDP protocol
+ *
+ * @param command
+ */
+void sendCommandUDP(char* command)
 {
-	ssize_t n = sendto(fd_udp, msg, strlen(msg), 0, server_address->ai_addr, server_address->ai_addrlen);
+	ssize_t n = sendto(fd_udp, command, strlen(command), 0, server_address->ai_addr, server_address->ai_addrlen);
 	if (n == -1)
 	{
 		fprintf(stderr, "Some error occurred sending command\n");
@@ -53,13 +58,13 @@ void sendCommand(char* msg)
  * sending its identification UID and a selected password pass.
  * The result of the DS registration request should be displayed.
  *
- * @param UID
+ * @param uid
  * @param pass
  */
-void registerUser(int UID, char* pass)
+void registerUser(int uid, char* pass)
 {
-	sendCommand("registerUser");
-	printf("registerUser %d %s\n", UID, pass);
+	sendCommandUDP("registerUser\n");
+	printf("registerUser %d %s\n", uid, pass);
 }
 
 /**
@@ -69,13 +74,13 @@ void registerUser(int UID, char* pass)
  * unsubscribe this user from all groups in which it was subscribed. The result of
  * the unregister request should be displayed.
  *
- * @param UID
+ * @param uid
  * @param pass
  */
-void unregisterUser(int UID, char* pass)
+void unregisterUser(int uid, char* pass)
 {
-	sendCommand("unregisterUser");
-	printf("unregisterUser %d %s\n", UID, pass);
+	sendCommandUDP("unregisterUser\n");
+	printf("unregisterUser %d %s\n", uid, pass);
 }
 
 /**
@@ -84,13 +89,13 @@ void unregisterUser(int UID, char* pass)
  * result of the DS validation should be displayed to the user.
  * The User application memorizes the UID in usage.
  *
- * @param UID
+ * @param uid
  * @param pass
  */
-void login(int UID, char* pass)
+void login(int uid, char* pass)
 {
-	sendCommand("login");
-	printf("login %d %s\n", UID, pass);
+	sendCommandUDP("login\n");
+	printf("login %d %s\n", uid, pass);
 }
 
 /**
@@ -101,7 +106,7 @@ void login(int UID, char* pass)
  */
 void logout()
 {
-	sendCommand("logout");
+	sendCommandUDP("logout\n");
 	printf("logout\n");
 }
 /**
@@ -110,7 +115,7 @@ void logout()
  */
 void showUID()
 {
-	sendCommand("showUID");
+	sendCommandUDP("showUID\n");
 	printf("showUID\n");
 }
 
@@ -120,7 +125,7 @@ void showUID()
  */
 void exitClient()
 {
-	sendCommand("exitClient");
+	sendCommandUDP("exitClient\n");
 	printf("exit\n");
 }
 
@@ -132,7 +137,7 @@ void exitClient()
  */
 void groups()
 {
-	sendCommand("groups");
+	sendCommandUDP("groups\n");
 	printf("groups\n");
 }
 
@@ -144,13 +149,13 @@ void groups()
  * named GName. The confirmation of successful subscription (or not) should be
  * displayed.
  *
- * @param GID
- * @param GIDName
+ * @param gid
+ * @param gid_name
  */
-void subscribe(int GID, char* GIDName)
+void subscribe(int gid, char* gid_name)
 {
-	sendCommand("subscribe");
-	printf("subscribe %d %s\n", GID, GIDName);
+	sendCommandUDP("subscribe\n");
+	printf("subscribe %d %s\n", gid, gid_name);
 }
 
 /**
@@ -159,12 +164,12 @@ void subscribe(int GID, char* GIDName)
  * asking to unsubscribe group GID. The confirmation of success (or not) should
  * be displayed.
  *
- * @param GID
+ * @param gid
  */
-void unsubscribe(int GID)
+void unsubscribe(int gid)
 {
-	sendCommand("unsubscribe");
-	printf("unsubscribe %d\n", GID);
+	sendCommandUDP("unsubscribe\n");
+	printf("unsubscribe %d\n", gid);
 }
 
 /**
@@ -176,7 +181,7 @@ void unsubscribe(int GID)
  */
 void my_groups()
 {
-	sendCommand("my_groups");
+	sendCommandUDP("my_groups\n");
 	printf("my_groups\n");
 }
 
@@ -185,12 +190,12 @@ void my_groups()
  * locally memorizes GID as the ID of the active group. Subsequent ulist, post
  * and retrieve messaging commands refer to this GID.
  *
- * @param GID
+ * @param gid
  */
-void selectGroup(int GID)
+void selectGroup(int gid)
 {
-	sendCommand("selectGroup");
-	printf("select %d\n", GID);
+	sendCommandUDP("selectGroup\n");
+	printf("select %d\n", gid);
 }
 
 /**
@@ -199,7 +204,7 @@ void selectGroup(int GID)
  */
 void showGID()
 {
-	sendCommand("showGID");
+	sendCommandUDP("showGID\n");
 	printf("showGID\n");
 }
 
@@ -211,7 +216,7 @@ void showGID()
  */
 void ulist()
 {
-	sendCommand("ulist");
+	sendCommandUDP("ulist\n");
 	printf("ulist\n");
 }
 
@@ -227,7 +232,7 @@ void ulist()
  */
 void post(char* message, char* fname) // TODO file size and data
 {
-	sendCommand("post");
+	sendCommandUDP("post\n");
 	printf("post %s %s\n", message, fname);
 }
 
@@ -242,10 +247,10 @@ void post(char* message, char* fname) // TODO file size and data
  * list of text messages and, if available, the associated filenames and respective
  * sizes.
  *
- * @param MID
+ * @param mid
  */
-void retrieve(int MID)
+void retrieve(int mid)
 {
-	sendCommand("retrieve");
-	printf("retrieve %d\n", MID);
+	sendCommandUDP("retrieve\n");
+	printf("retrieve %d\n", mid);
 }
