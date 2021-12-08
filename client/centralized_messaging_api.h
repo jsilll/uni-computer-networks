@@ -12,9 +12,9 @@
  * @param UID
  * @param pass
  */
-void registerUser(int UID, char *pass)
+void registerUser(int UID, char* pass)
 {
-    printf("registerUser %d %s\n", UID, pass);
+	printf("registerUser %d %s\n", UID, pass);
 }
 
 /**
@@ -27,9 +27,9 @@ void registerUser(int UID, char *pass)
  * @param UID
  * @param pass
  */
-void unregisterUser(int UID, char *pass)
+void unregisterUser(int UID, char* pass)
 {
-    printf("unregisterUser %d %s\n", UID, pass);
+	printf("unregisterUser %d %s\n", UID, pass);
 }
 
 /**
@@ -41,9 +41,9 @@ void unregisterUser(int UID, char *pass)
  * @param UID
  * @param pass
  */
-void login(int UID, char *pass)
+void login(int UID, char* pass)
 {
-    printf("login %d %s\n", UID, pass);
+	printf("login %d %s\n", UID, pass);
 }
 
 /**
@@ -54,7 +54,7 @@ void login(int UID, char *pass)
  */
 void logout()
 {
-    printf("logout\n");
+	printf("logout\n");
 }
 
 /**
@@ -63,7 +63,7 @@ void logout()
  */
 void exitClient()
 {
-    printf("exit\n");
+	printf("exit\n");
 }
 
 /**
@@ -74,7 +74,7 @@ void exitClient()
  */
 void groups()
 {
-    printf("groups\n");
+	printf("groups\n");
 }
 
 /**
@@ -88,9 +88,9 @@ void groups()
  * @param GID
  * @param GIDName
  */
-void subscribe(int GID, char *GIDName)
+void subscribe(int GID, char* GIDName)
 {
-    printf("subscribe %d %s\n", GID, GIDName);
+	printf("subscribe %d %s\n", GID, GIDName);
 }
 
 /**
@@ -103,7 +103,7 @@ void subscribe(int GID, char *GIDName)
  */
 void unsubscribe(int GID)
 {
-    printf("unsubscribe %d\n", GID);
+	printf("unsubscribe %d\n", GID);
 }
 
 /**
@@ -115,7 +115,7 @@ void unsubscribe(int GID)
  */
 void my_groups()
 {
-    printf("my_groups\n");
+	printf("my_groups\n");
 }
 
 /**
@@ -127,7 +127,7 @@ void my_groups()
  */
 void selectGroup(int GID)
 {
-    printf("select %d\n", GID);
+	printf("select %d\n", GID);
 }
 
 /**
@@ -138,7 +138,7 @@ void selectGroup(int GID)
  */
 void ulist()
 {
-    printf("ulist\n");
+	printf("ulist\n");
 }
 
 /**
@@ -151,9 +151,9 @@ void ulist()
  * @param message
  * @param fname
  */
-void post(char *message, char *fname) // TODO file size and data
+void post(char* message, char* fname) // TODO file size and data
 {
-    printf("post %s %s\n", message, fname);
+	printf("post %s %s\n", message, fname);
 }
 
 /**
@@ -171,7 +171,7 @@ void post(char *message, char *fname) // TODO file size and data
  */
 void retrieve(int MID)
 {
-    printf("retrieve %d\n", MID);
+	printf("retrieve %d\n", MID);
 }
 
 #endif //CENTRALIZED_MESSAGING_API_H
