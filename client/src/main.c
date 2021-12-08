@@ -39,10 +39,10 @@ int main(int argc, char *argv[])
 }
 
 /**
- * @brief Parses the initial arguments for the program.
+ * @brief Parses the initial arguments for the program
  * 
- * @param argc: number of arguments in argv
- * @param argv: array passed arguments
+ * @param argc number of arguments in argv
+ * @param argv array passed arguments
  */
 void parseExecArgs(int argc, char *argv[])
 {
@@ -187,7 +187,7 @@ void parseCommand(char *line)
         {
             if (!(MID = parseMID(arg1)))
             {
-                fprintf(stderr, MSG_INVALID_TXT_MSG);
+                fprintf(stderr, MSG_INVALID_MID);
                 return;
             }
             return retrieve(MID);
@@ -210,7 +210,7 @@ void parseCommand(char *line)
             }
             return registerUser(UID, arg2);
         }
-        else if (!strcmp(op, CMD_REGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
+        else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
         {
             if ((UID = parseUID(arg1)) == -1)
             {
