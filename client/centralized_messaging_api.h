@@ -1,4 +1,3 @@
-/* centralized_messaging_api.h */
 #ifndef CENTRALIZED_MESSAGING_API_H
 #define CENTRALIZED_MESSAGING_API_H
 
@@ -9,13 +8,13 @@
  * message to the DS server, using the UDP protocol, asking to register a new user,
  * sending its identification UID and a selected password pass.
  * The result of the DS registration request should be displayed.
- * 
- * @param UID 
- * @param pass 
+ *
+ * @param UID
+ * @param pass
  */
 void registerUser(int UID, char *pass)
 {
-    printf("registerUser\n");
+    printf("registerUser %d %s\n", UID, pass);
 }
 
 /**
@@ -24,13 +23,13 @@ void registerUser(int UID, char *pass)
  * user with identification UID and password pass. The DS server should
  * unsubscribe this user from all groups in which it was subscribed. The result of
  * the unregister request should be displayed.
- * 
- * @param UID 
- * @param pass 
+ *
+ * @param UID
+ * @param pass
  */
 void unregisterUser(int UID, char *pass)
 {
-    printf("unrgesterUser\n");
+    printf("unregisterUser %d %s\n", UID, pass);
 }
 
 /**
@@ -38,20 +37,20 @@ void unregisterUser(int UID, char *pass)
  * message in UDP to the DS to validate the user credentials: UID and pass. The
  * result of the DS validation should be displayed to the user.
  * The User application memorizes the UID in usage.
- * 
- * @param UID 
- * @param pass 
+ *
+ * @param UID
+ * @param pass
  */
 void login(int UID, char *pass)
 {
-    printf("login\n");
+    printf("login %d %s\n", UID, pass);
 }
 
 /**
  * @brief Following this command the User application (locally) forgets the credentials of the
  * previously logged in user. A new login command, with different credentials, can
  * then be issued.
- * 
+ *
  */
 void logout()
 {
@@ -71,7 +70,7 @@ void exitClient()
  * @brief Following this command the User application sends the DS
  * server a message in UDP asking for the list of available groups. The reply
  * should be displayed as a list of group IDs (GID) and names (GName).
- * 
+ *
  */
 void groups()
 {
@@ -85,13 +84,13 @@ void groups()
  * GID = 0 this corresponds to a request to create and subscribe to a new group
  * named GName. The confirmation of successful subscription (or not) should be
  * displayed.
- * 
- * @param GID 
- * @param GIDName 
+ *
+ * @param GID
+ * @param GIDName
  */
 void subscribe(int GID, char *GIDName)
 {
-    printf("subscribe\n");
+    printf("subscribe %d %s\n", GID, GIDName);
 }
 
 /**
@@ -99,12 +98,12 @@ void subscribe(int GID, char *GIDName)
  * application sends the DS server a message in UDP, including the user’s UID,
  * asking to unsubscribe group GID. The confirmation of success (or not) should
  * be displayed.
- * 
- * @param GID 
+ *
+ * @param GID
  */
 void unsubscribe(int GID)
 {
-    printf("unsubscribe\n");
+    printf("unsubscribe %d\n", GID);
 }
 
 /**
@@ -112,7 +111,7 @@ void unsubscribe(int GID)
  * the DS server a message in UDP, including the user’s UID, asking the list of
  * groups to which this user has already subscribed. The reply should be displayed
  * as a list of group IDs and names.
- * 
+ *
  */
 void my_groups()
 {
@@ -123,19 +122,19 @@ void my_groups()
  * @brief Following this command the User application
  * locally memorizes GID as the ID of the active group. Subsequent ulist, post
  * and retrieve messaging commands refer to this GID.
- * 
- * @param GID 
+ *
+ * @param GID
  */
 void selectGroup(int GID)
 {
-    printf("select\n");
+    printf("select %d\n", GID);
 }
 
 /**
  * @brief Following this command the User application sends the DS
  * server a message in TCP asking for the list of user UIDs that are subscribed to
  * the currently subscribed group GID.
- * 
+ *
  */
 void ulist()
 {
@@ -148,13 +147,13 @@ void ulist()
  * “ “), and possibly also a file with name Fname.
  * The confirmation of success (or not) should be displayed, including the posted
  * message’s ID MID. The TCP connection is then closed.
- * 
- * @param message 
- * @param fname 
+ *
+ * @param message
+ * @param fname
  */
 void post(char *message, char *fname) // TODO file size and data
 {
-    printf("post\n");
+    printf("post %s %s\n", message, fname);
 }
 
 /**
@@ -167,12 +166,12 @@ void post(char *message, char *fname) // TODO file size and data
  * and then closes the TCP session. The reply should be displayed as a numbered
  * list of text messages and, if available, the associated filenames and respective
  * sizes.
- * 
- * @param MID 
+ *
+ * @param MID
  */
 void retrieve(int MID)
 {
-    printf("retrieve\n");
+    printf("retrieve %d\n", MID);
 }
 
-#endif /* centralized_messaging_api.h */
+#endif //CENTRALIZED_MESSAGING_API_H

@@ -1,6 +1,7 @@
-/* client_interface.h */
-#ifndef CLIENT_INTERFACE_H
+#ifndef CLIENT_CLIENT_INTERFACE_H
+#define CLIENT_CLIENT_INTERFACE_H
 
+/* Input */
 static const char CMD_REGISTER[] = "reg";
 static const char CMD_UNREGISTER[] = "unregister";
 static const char CMD_UNREGISTER_SHORT[] = "unr";
@@ -23,7 +24,8 @@ static const char CMD_POST[] = "post";
 static const char CMD_RETRIEVE[] = "retrieve";
 static const char CMD_RETRIEVE_SHORT[] = "r";
 
-static const char MSG_UKNOWN_CMD[] = "Uknown command\n";
+/* Output */
+static const char MSG_UNKNOWN_CMD[] = "Unknown command\n";
 static const char MSG_INVALID_GID[] = "Invalid GID argument\n";
 static const char MSG_INVALID_TXT_MSG[] = "Invalid text message argument\n";
 static const char MSG_INVALID_MID[] = "Invalid MID argument\n";
@@ -32,5 +34,4 @@ static const char MSG_INVALID_PASSWD[] = "Invalid password argument\n";
 static const char MSG_INVALID_GNAME[] = "Invalid GName argument\n";
 static const char MSG_INVALID_FNAME[] = "Invalid Fname argument\n";
 
-#define CLIENT_INTERFACE_H
-#endif /* client_interface.h */
+#endif //CLIENT_CLIENT_INTERFACE_H
