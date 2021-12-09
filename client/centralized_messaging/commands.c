@@ -230,7 +230,7 @@ void ulist()
  * @param message
  * @param fname
  */
-void post(char* message, char* fname) // TODO file size and data
+void post(char* message, char* fname) // TODO file size and data, and trim message
 {
 	sendCommandUDP("post\n");
 	printf("post %s %s\n", message, fname);

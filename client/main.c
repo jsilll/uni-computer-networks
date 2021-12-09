@@ -14,7 +14,7 @@
 #include "interface.h"
 
 #define DEFAULT_PORT "58006"
-#define MAX_INPUT_SIZE T_SIZE + 32 /* 'post "240" 24' */
+#define MAX_INPUT_SIZE T_SIZE + 32
 
 char PORT[MAX_INPUT_SIZE], IP[MAX_INPUT_SIZE];
 
@@ -46,7 +46,9 @@ int main(int argc, char* argv[])
 	{
 		parseCommand(line);
 	}
-	// TODO SIGINT Handler
+	// TODO SIGINT Handler (centralized messaging)
+	// freeaddrinfo(res);
+	// close(fd);
 }
 
 /**

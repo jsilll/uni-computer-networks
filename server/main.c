@@ -1,15 +1,11 @@
-#include <errno.h>
 #include <getopt.h>
-#include <libgen.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 
 #define GROUP_NUMBER 6
@@ -61,8 +57,8 @@ int main(int argc, char* argv[])
 	}
 
 	// TODO SIGINT Handler
-	freeaddrinfo(res);
-	close(fd);
+	// freeaddrinfo(res);
+	// close(fd);
 }
 
 /*
