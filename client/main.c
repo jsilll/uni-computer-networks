@@ -1,7 +1,5 @@
 #include <arpa/inet.h>
 #include <errno.h>
-#include <getopt.h>
-#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,32 +7,28 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "parsing.h"
 #include "centralized_messaging/commands.h"
 #include "centralized_messaging/parsing.h"
-#include "interface.h"
 
 #define DEFAULT_PORT "58006"
 #define MAX_INPUT_SIZE T_SIZE + 32
 
 char PORT[MAX_INPUT_SIZE], IP[MAX_INPUT_SIZE];
 
-/* Default Execution Arguments */
+/* Execution Arguments */
 void getLocalIP();
+void loadInitArgs(int argc, char* argv[]);
 
-/* Execution Arguments Parsing */
-void parseExecArgs(int argc, char* argv[]);
-void parseIPArg(char* ip);
-void parsePortArg(char* port);
-
-/* Commands Parsing */
-void parseCommand(char* line);
+/* Command Execution */
+void execCommand(char* line);
 
 int main(int argc, char* argv[])
 {
 	strcpy(PORT, DEFAULT_PORT);
 	getLocalIP();
 
-	parseExecArgs(argc, argv);
+	loadInitArgs(argc, argv);
 
 	printf("Centralized Messaging Client Initialized\n");
 	printf("PORT: %s IP: %s\n", PORT, IP);
@@ -44,7 +38,7 @@ int main(int argc, char* argv[])
 	char line[MAX_INPUT_SIZE];
 	while (fgets(line, sizeof(line) / sizeof(char), stdin))
 	{
-		parseCommand(line);
+		execCommand(line);
 	}
 	// TODO SIGINT Handler (centralized messaging)
 	// freeaddrinfo(res);
@@ -83,12 +77,13 @@ void getLocalIP()
 }
 
 /**
- * @brief Parses the initial arguments for the program
+ * @brief Loads the initial arguments given by the
+ * user to the program
  *
  * @param argc number of arguments in argv
  * @param argv array passed arguments
  */
-void parseExecArgs(int argc, char* argv[])
+void loadInitArgs(int argc, char* argv[])
 {
 	int opt;
 	while ((opt = getopt(argc, argv, ":n:p:")) != -1)
@@ -123,48 +118,11 @@ void parseExecArgs(int argc, char* argv[])
 }
 
 /**
- * @brief Validates the ip option argument.
- *
- * @param ip ip argument in string format
- */
-void parseIPArg(char* ip)
-{
-	unsigned long ip_parsed = 0;
-	if (!inet_pton(AF_INET, ip, &ip_parsed))
-	{
-		fprintf(stderr, "Invalid value for ip argument\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-/**
- * @brief Validates the port option argument.
- *
- * @param port port argument in string format
- */
-void parsePortArg(char* port)
-{
-	for (int i = 0; i < strlen(port); i++)
-	{
-		if (port[i] != '0')
-		{
-			int port_parsed = strtol(port, NULL, 10);
-			if (port_parsed <= 0 || port_parsed > 65535)
-			{
-				fprintf(stderr, "Invalid value for port argument\n");
-				exit(EXIT_FAILURE);
-			}
-			return;
-		}
-	}
-}
-
-/**
- * @brief Parses string representing a command.
+ * @brief Executes a command represented by a string.
  *
  * @param line string that represents a command
  */
-void parseCommand(char* line)
+void execCommand(char* line)
 {
 	int UID, GID, MID;
 	char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE];

@@ -11,7 +11,7 @@ int fd_udp;
 struct addrinfo* server_address;
 
 /**
- * @brief Sets up the connection
+ * @brief Sets up the UDP socket
  *
  * @param ip
  * @param port
@@ -233,6 +233,11 @@ void ulist()
 void post(char* message, char* fname) // TODO file size and data, and trim message
 {
 	sendCommandUDP("post\n");
+	if (fname == NULL)
+	{
+		printf("post %s\n", message);
+		return;
+	}
 	printf("post %s %s\n", message, fname);
 }
 

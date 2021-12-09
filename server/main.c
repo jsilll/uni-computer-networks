@@ -15,12 +15,12 @@ unsigned short int PORT = 58000 + GROUP_NUMBER;
 bool VERBOSE = false;
 
 /* Argument Parsing Functions */
-void parseExecArgs(int argc, char* argv[]);
+void loadInitArgs(int argc, char* argv[]);
 unsigned short int parsePortArg(char* port);
 
 int main(int argc, char* argv[])
 {
-	parseExecArgs(argc, argv);
+	loadInitArgs(argc, argv);
 	printf("Centralized Messaging Server Initialized\n");
 	printf("PORT: %d VERBOSE: %s\n", PORT, BOOL_TO_STR(VERBOSE));
 
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
  *  - argc: number of arguments in argv
  *  - argv: array passed arguments
  */
-void parseExecArgs(int argc, char* argv[])
+void loadInitArgs(int argc, char* argv[])
 {
 	int opt;
 	while ((opt = getopt(argc, argv, ":vp:")) != -1)
