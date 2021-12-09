@@ -9,14 +9,17 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#include "centralized_messaging_api.h"
-#include "centralized_messaging_parsing.h"
-#include "client_interface.h"
+#include "centralized_messaging/commands.h"
+#include "centralized_messaging/parsing.h"
+#include "interface.h"
 
 #define DEFAULT_PORT "58006"
 #define MAX_INPUT_SIZE T_SIZE + 32 /* 'post "240" 24' */
 
 char PORT[MAX_INPUT_SIZE], IP[MAX_INPUT_SIZE];
+
+/* Default Execution Arguments */
+void getLocalIP();
 
 /* Execution Arguments Parsing */
 void parseExecArgs(int argc, char* argv[]);
@@ -26,40 +29,10 @@ void parsePortArg(char* port);
 /* Commands Parsing */
 void parseCommand(char* line);
 
-void getLocalIP()
-{
-	struct addrinfo hints;
-
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_flags = AI_CANONNAME;
-
-	char hostname_buffer[128];
-	if (gethostname(hostname_buffer, 128) == -1)
-		fprintf(stderr, "error: %s\n", strerror(errno));
-
-	int errcode;
-	struct addrinfo* client_addrinfo;
-	if ((errcode = getaddrinfo(hostname_buffer, NULL, &hints, &client_addrinfo)))
-	{
-		fprintf(stderr, "error: getaddrinfo: %s\n", gai_strerror(errcode));
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		char buffer[INET_ADDRSTRLEN];
-
-		struct in_addr* addr = &((struct sockaddr_in*)client_addrinfo->ai_addr)->sin_addr;
-		strcpy(IP, inet_ntop(client_addrinfo->ai_family, addr, buffer, sizeof buffer));
-		return;
-	}
-}
-
 int main(int argc, char* argv[])
 {
-	strcpy(PORT, DEFAULT_PORT); // PORT -> 58006
-	getLocalIP(); // IP -> "192.168.1.100"
+	strcpy(PORT, DEFAULT_PORT);
+	getLocalIP();
 
 	parseExecArgs(argc, argv);
 
@@ -73,7 +46,38 @@ int main(int argc, char* argv[])
 	{
 		parseCommand(line);
 	}
-	return 1;
+	// TODO SIGINT Handler
+}
+
+/**
+ * @brief Gets the local machine's IP
+ */
+void getLocalIP()
+{
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_CANONNAME;
+
+	char hostname_buf[128];
+	if (gethostname(hostname_buf, 128) == -1)
+	{
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	int errcode;
+	struct addrinfo* host_addrinfo;
+	if ((errcode = getaddrinfo(hostname_buf, NULL, &hints, &host_addrinfo)))
+	{
+		fprintf(stderr, "error: getaddrinfo: %s\n", gai_strerror(errcode));
+		exit(EXIT_FAILURE);
+	}
+
+	char buffer[INET_ADDRSTRLEN];
+	struct in_addr* addr = &((struct sockaddr_in*)host_addrinfo->ai_addr)->sin_addr;
+	strcpy(IP, inet_ntop(host_addrinfo->ai_family, addr, buffer, sizeof buffer));
 }
 
 /**

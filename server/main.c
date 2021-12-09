@@ -55,8 +55,7 @@ int main(int argc, char* argv[])
 		n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
 		if (n == -1) /* error */ exit(1);
 
-		write(1, "received: ", 10);
-		write(1, buffer, n);
+		printf("%s", buffer);
 		// n = sendto(fd, buffer, n, 0,(struct sockaddr*)&addr, addrlen);
 		// if (n == -1) /* error */ exit(1);
 	}
@@ -64,7 +63,6 @@ int main(int argc, char* argv[])
 	// TODO SIGINT Handler
 	freeaddrinfo(res);
 	close(fd);
-
 }
 
 /*

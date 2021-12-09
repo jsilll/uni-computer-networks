@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include <string.h>
 
-#include "centralized_messaging_api.h"
+#include "commands.h"
 
 int fd_udp;
 struct addrinfo* server_address;
