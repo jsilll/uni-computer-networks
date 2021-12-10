@@ -33,16 +33,15 @@ int main(int argc, char* argv[])
 	printf("Centralized Messaging Client Initialized\n");
 	printf("PORT: %s IP: %s\n", PORT, IP);
 
-	setupSocketUDP(IP, PORT);
+	setupServerAddresses(IP, PORT);
 
 	char line[MAX_INPUT_SIZE];
 	while (fgets(line, sizeof(line) / sizeof(char), stdin))
 	{
 		execCommand(line);
 	}
-	// TODO SIGINT Handler (centralized messaging)
-	// freeaddrinfo(res);
-	// close(fd);
+
+	// TODO SIGINT Handler (centralized messaging) freeServerAdresses();
 }
 
 /**
@@ -124,7 +123,6 @@ void loadInitArgs(int argc, char* argv[])
  */
 void execCommand(char* line)
 {
-	int UID, GID, MID;
 	char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE];
 	// TODO: Mais argumentos do que os necessarios causam msg de erro?
 	int numTokens = sscanf(line, "%s %s %s", op, arg1, arg2);
@@ -166,21 +164,21 @@ void execCommand(char* line)
 	case 2:
 		if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT))
 		{
-			if ((GID = parseGID(arg1)) <= 0)
+			if ((parseGID(arg1)) <= 0)
 			{
 				fprintf(stderr, MSG_INVALID_GID);
 				return;
 			}
-			return unsubscribe(GID);
+			return unsubscribe(arg1);
 		}
 		else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT))
 		{
-			if ((GID = parseGID(arg1)) <= 0)
+			if ((parseGID(arg1)) <= 0)
 			{
 				fprintf(stderr, MSG_INVALID_GID);
 				return;
 			}
-			return selectGroup(GID);
+			return selectGroup(arg1);
 		}
 		else if (!strcmp(op, CMD_POST))
 		{
@@ -193,12 +191,12 @@ void execCommand(char* line)
 		}
 		else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
 		{
-			if (!(MID = parseMID(arg1)))
+			if (!(parseMID(arg1)))
 			{
 				fprintf(stderr, MSG_INVALID_MID);
 				return;
 			}
-			return retrieve(MID);
+			return retrieve(arg1);
 		}
 		fprintf(stderr, MSG_UNKNOWN_CMD);
 		return;
@@ -206,7 +204,7 @@ void execCommand(char* line)
 	case 3:
 		if (!strcmp(op, CMD_REGISTER))
 		{
-			if ((UID = parseUID(arg1)) == -1)
+			if ((parseUID(arg1)) == -1)
 			{
 				fprintf(stderr, MSG_INVALID_UID);
 				return;
@@ -216,11 +214,11 @@ void execCommand(char* line)
 				fprintf(stderr, MSG_INVALID_PASSWD);
 				return;
 			}
-			return registerUser(UID, arg2);
+			return registerUser(arg1, arg2);
 		}
 		else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
 		{
-			if ((UID = parseUID(arg1)) == -1)
+			if ((parseUID(arg1)) == -1)
 			{
 				fprintf(stderr, MSG_INVALID_UID);
 				return;
@@ -230,11 +228,11 @@ void execCommand(char* line)
 				fprintf(stderr, MSG_INVALID_PASSWD);
 				return;
 			}
-			return unregisterUser(UID, arg2);
+			return unregisterUser(arg1, arg2);
 		}
 		else if (!strcmp(op, CMD_LOGIN))
 		{
-			if ((UID = parseUID(arg1)) == -1)
+			if ((parseUID(arg1)) == -1)
 			{
 				fprintf(stderr, MSG_INVALID_UID);
 				return;
@@ -244,11 +242,11 @@ void execCommand(char* line)
 				fprintf(stderr, MSG_INVALID_PASSWD);
 				return;
 			}
-			return login(UID, arg2);
+			return login(arg1, arg2);
 		}
 		else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT))
 		{
-			if ((GID = parseGID(arg1)) == -1)
+			if ((parseGID(arg1)) == -1)
 			{
 				fprintf(stderr, MSG_INVALID_GID);
 				return;
@@ -258,7 +256,7 @@ void execCommand(char* line)
 				fprintf(stderr, MSG_INVALID_GNAME);
 				return;
 			}
-			return subscribe(GID, arg2);
+			return subscribe(arg1, arg2);
 		}
 		else if (!strcmp(op, CMD_POST))
 		{

@@ -29,7 +29,7 @@ const char CMD_RETRIEVE[] = "retrieve";
 const char CMD_RETRIEVE_SHORT[] = "r";
 
 /* Output */
-const char MSG_INVALID_IP[] = "Invalid value for ip argument\n";
+const char MSG_INVALID_IP[] = "Invalid value for ip argument, checking if it's an address\n";
 const char MSG_INVALID_PORT[] = "Invalid value for port argument\n";
 
 const char MSG_UNKNOWN_CMD[] = "Unknown command\n";

@@ -1,23 +1,25 @@
 #ifndef CENTRALIZED_MESSAGING_API_H
 #define CENTRALIZED_MESSAGING_API_H
 
-void setupSocketUDP(char* ip, char* port);
+/* Server Addresses (UDP and TCP) */
+void setupServerAddresses(char* ip, char* port);
+void freeServerAdresses();
 
 /* Client Commands */
-void registerUser(int uid, char* pass);
-void unregisterUser(int uid, char* pass);
-void login(int uid, char* pass); // TODO should be here?
-void logout(); // TODO should be here?
-void showUID(); // TODO should be here?
+void registerUser(char* uid_arg, char* pass_arg);
+void unregisterUser(char* uid_arg, char* pass_arg);
+void login(char* uid_arg, char* pass_arg);
+void logout();
+void showUID();
 void exitClient(); // TODO should be here?
 void groups();
-void subscribe(int gid, char* gid_name);
-void unsubscribe(int gid);
+void subscribe(char* gid_arg, char* gid_name_arg);
+void unsubscribe(char* gid_arg);
 void my_groups();
-void selectGroup(int gid); // TODO should be here?
-void showGID(); // TODO should be here?
+void selectGroup(char* gid_arg);
+void showGID();
 void ulist();
 void post(char* message, char* fname);
-void retrieve(int mid);
+void retrieve(char* mid);
 
 #endif //CENTRALIZED_MESSAGING_API_H
