@@ -123,11 +123,7 @@ void loadInitArgs(int argc, char* argv[])
  */
 void execCommand(char* line)
 {
-	char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE], arg3[MAX_INPUT_SIZE];
-    op[0] = '\0';
-    arg1[0] = '\0';
-    arg2[0] = '\0';
-    arg3[0] = '\0';
+	char op[MAX_INPUT_SIZE] = {'\0'}, arg1[MAX_INPUT_SIZE] = {'\0'}, arg2[MAX_INPUT_SIZE] = {'\0'}, arg3[MAX_INPUT_SIZE] = {'\0'};
 
 	// TODO: Mais argumentos do que os necessarios causam msg de erro?
 	int numTokens = sscanf(line, "%s %s %s %s", op, arg1, arg2, arg3);
@@ -135,10 +131,11 @@ void execCommand(char* line)
     // Caso especial do post
     if (!strcmp(op, CMD_POST)) {
         arg2[0] = '\0';
+
         numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
 
         if (numTokens < 2) {
-            fprintf(stderr, MSG_INVALID_POST);
+            fprintf(stderr, MSG_UNKNOWN_CMD);
             return;
         }
 
