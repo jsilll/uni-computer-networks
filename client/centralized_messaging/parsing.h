@@ -101,7 +101,7 @@ int parseMID(char* mid)
 int parseMessageText(char* message)
 {
 	int len = strlen(message);
-	if (len > (T_SIZE + 2) || message[0] != '"' || message[len - 1] != '"')
+	if (len > (T_SIZE))
 		return -1;
 	return 0;
 }

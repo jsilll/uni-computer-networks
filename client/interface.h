@@ -40,6 +40,7 @@ const char MSG_INVALID_UID[] = "Invalid user ID argument\n";
 const char MSG_INVALID_PASSWD[] = "Invalid password argument\n";
 const char MSG_INVALID_GNAME[] = "Invalid group name argument\n";
 const char MSG_INVALID_FNAME[] = "Invalid file name argument\n";
+const char MSG_INVALID_POST[] = "Invalid post command\n";
 
 
 #endif //CLIENT_CLIENT_INTERFACE_H

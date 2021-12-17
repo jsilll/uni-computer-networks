@@ -123,9 +123,47 @@ void loadInitArgs(int argc, char* argv[])
  */
 void execCommand(char* line)
 {
-	char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE];
+	char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE], arg3[MAX_INPUT_SIZE];
+    op[0] = '\0';
+    arg1[0] = '\0';
+    arg2[0] = '\0';
+    arg3[0] = '\0';
+
 	// TODO: Mais argumentos do que os necessarios causam msg de erro?
-	int numTokens = sscanf(line, "%s %s %s", op, arg1, arg2);
+	int numTokens = sscanf(line, "%s %s %s %s", op, arg1, arg2, arg3);
+
+    // Caso especial do post
+    if (!strcmp(op, CMD_POST)) {
+        arg2[0] = '\0';
+        numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
+
+        if (numTokens < 2) {
+            fprintf(stderr, MSG_INVALID_POST);
+            return;
+        }
+
+        if (parseMessageText(arg1) == -1)
+        {
+            fprintf(stderr, MSG_INVALID_TXT_MSG);
+            return;
+        }
+
+        if (strlen(arg2)) {
+            if (parseFName(arg2) == REG_NOMATCH)
+            {
+                fprintf(stderr, MSG_INVALID_FNAME);
+                return;
+            }
+            return post(arg1, arg2);
+        }
+
+        return post(arg1, NULL);
+    }
+
+    if (numTokens == 4) {
+        fprintf(stderr, MSG_UNKNOWN_CMD);
+        return;
+    }
 
 	switch (numTokens)
 	{
@@ -180,15 +218,7 @@ void execCommand(char* line)
 			}
 			return selectGroup(arg1);
 		}
-		else if (!strcmp(op, CMD_POST))
-		{
-			if (parseMessageText(arg1) == -1)
-			{
-				fprintf(stderr, MSG_INVALID_TXT_MSG);
-				return;
-			}
-			return post(arg1, NULL);
-		}
+
 		else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
 		{
 			if (!(parseMID(arg1)))
@@ -258,21 +288,7 @@ void execCommand(char* line)
 			}
 			return subscribe(arg1, arg2);
 		}
-		else if (!strcmp(op, CMD_POST))
-		{
-			if (parseMessageText(arg1) == -1)
-			{
-				fprintf(stderr, MSG_INVALID_TXT_MSG);
-				return;
-			}
-			else if (parseFName(arg2) == REG_NOMATCH)
-			{
-				fprintf(stderr, MSG_INVALID_FNAME);
-				return;
-			}
-			return post(arg1, arg2);
-		}
-		fprintf(stderr, MSG_UNKNOWN_CMD);
+        fprintf(stderr, MSG_UNKNOWN_CMD);
 		return;
 
 	default:
