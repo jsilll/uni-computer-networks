@@ -33,15 +33,14 @@ void setupServerAddresses(char* ip, char* port)
 	if ((errcode = getaddrinfo(ip, port, &hints, &server_address_udp)) != 0)
 	{
 		fprintf(stderr, "Error on getaddrinfo (udp): %s\n", gai_strerror(errcode));
-		exit(EXIT_FAILURE);
+		return;
 	}
-
 
 	hints.ai_socktype = SOCK_STREAM;
 	if ((errcode = getaddrinfo(ip, port, &hints, &server_address_tcp)) != 0)
 	{
 		fprintf(stderr, "Error on getaddrinfo (tcp): %s\n", gai_strerror(errcode));
-		exit(EXIT_FAILURE);
+		return;
 	}
 }
 
@@ -65,17 +64,16 @@ void sendCommandUDP(char* command)
 	int fd_udp;
 	if ((fd_udp = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		fprintf(stderr, "Error creating UDP socket.\n");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "Couldn't send command. Error creating UDP socket.\n");
+        return;
 	}
 
 	ssize_t n = sendto(fd_udp, command, strlen(command), 0, server_address_udp->ai_addr, server_address_udp->ai_addrlen);
 	if (n == -1)
 	{
-		fprintf(stderr, "Some error occurred sending command\n");
-		close(fd_udp);
-		exit(1);
+		fprintf(stderr, "Couldn't send command. Error sending command\n");
 	}
+
 	close(fd_udp);
 }
 
@@ -90,17 +88,16 @@ void sendCommandTCP(char* command) // TODO
 	int fd_tcp;
 	if ((fd_tcp = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		fprintf(stderr, "Error creating TCP socket.\n");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "Couldn't send command. Error creating TCP socket.\n");
+		return;
 	}
 
 	ssize_t n = sendto(fd_tcp, command, strlen(command), 0, server_address_tcp->ai_addr, server_address_tcp->ai_addrlen);
 	if (n == -1)
 	{
-		fprintf(stderr, "Some error occurred sending command\n");
-		close(fd_tcp);
-		exit(1);
+		fprintf(stderr, "Couldn't send command. Error sending command\n");
 	}
+
 	close(fd_tcp);
 }
 
@@ -118,9 +115,7 @@ void registerUser(char* uid_arg, char* pass_arg)
 	// Server
 	sprintf(command_buffer, "REG %s %s\n", uid_arg, pass_arg);
 	sendCommandUDP(command_buffer);
-
-	// (consoante o server) Local State
-
+	// (consoante o server) Consultar Local State
 	printf("registerUser %s %s\n", uid_arg, pass_arg);
 }
 

@@ -14,7 +14,7 @@
 #define DEFAULT_PORT "58006"
 #define MAX_INPUT_SIZE T_SIZE + 32
 
-char PORT[MAX_INPUT_SIZE], IP[MAX_INPUT_SIZE];
+char PORT[MAX_INPUT_SIZE], ADDRESS[MAX_INPUT_SIZE];
 
 /* Execution Arguments */
 void getLocalIP();
@@ -27,25 +27,18 @@ int main(int argc, char* argv[])
 {
 	strcpy(PORT, DEFAULT_PORT);
 	getLocalIP();
-
 	loadInitArgs(argc, argv);
-
 	printf("Centralized Messaging Client Initialized\n");
-	printf("PORT: %s IP: %s\n", PORT, IP);
-
-	setupServerAddresses(IP, PORT);
-
+	printf("PORT: %s ADDRESS: %s\n", PORT, ADDRESS);
+	setupServerAddresses(ADDRESS, PORT);
 	char line[MAX_INPUT_SIZE];
 	while (fgets(line, sizeof(line) / sizeof(char), stdin))
-	{
 		execCommand(line);
-	}
-
 	// TODO SIGINT Handler (centralized messaging) freeServerAdresses();
 }
 
 /**
- * @brief Gets the local machine's IP
+ * @brief Gets the local machine's ADDRESS
  */
 void getLocalIP()
 {
@@ -72,7 +65,7 @@ void getLocalIP()
 
 	char buffer[INET_ADDRSTRLEN];
 	struct in_addr* addr = &((struct sockaddr_in*)host_addrinfo->ai_addr)->sin_addr;
-	strcpy(IP, inet_ntop(host_addrinfo->ai_family, addr, buffer, sizeof buffer));
+	strcpy(ADDRESS, inet_ntop(host_addrinfo->ai_family, addr, buffer, sizeof buffer));
 }
 
 /**
@@ -91,7 +84,7 @@ void loadInitArgs(int argc, char* argv[])
 		{
 		case 'n':
 			parseIPArg(optarg);
-			strcpy(IP, optarg);
+			strcpy(ADDRESS, optarg);
 			break;
 		case 'p':
 			parsePortArg(optarg);
@@ -128,16 +121,18 @@ void execCommand(char* line)
     char arg2[MAX_INPUT_SIZE] = {'\0'};
     char arg3[MAX_INPUT_SIZE] = {'\0'};
 
-    // Special Case for Post command
-    int numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
+    int numTokens = sscanf(line, "%s %s %s %s", op, arg1, arg2, arg3);
+
     if (!strcmp(op, CMD_POST)) {
+        op[0] = arg1[0] = arg2[0] = '\0';
+        numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
 
         if (numTokens < 2) {
             fprintf(stderr, MSG_INVALID_POST_CMD);
             return;
         }
 
-        else if ((!strlen(arg2) && line[strlen(line) - 2] != '"') || (parseMessageText(arg1) == -1))
+        if ((!strlen(arg2) && line[strlen(line) - 2] != '"') || (parseMessageText(arg1) == -1))
         {
             fprintf(stderr, MSG_INVALID_TXT_MSG);
             return;
@@ -155,12 +150,12 @@ void execCommand(char* line)
         return post(arg1, NULL);
     }
 
-    if ((numTokens = sscanf(line, "%s %s %s %s", op, arg1, arg2, arg3)) == 4) {
+    if (numTokens == 4){
         fprintf(stderr, MSG_UNKNOWN_CMD);
         return;
     }
 
-	switch (numTokens)
+    switch (numTokens)
 	{
 	case 1:
 		if (!strcmp(op, CMD_LOGOUT))

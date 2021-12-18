@@ -29,7 +29,7 @@ const char CMD_RETRIEVE[] = "retrieve";
 const char CMD_RETRIEVE_SHORT[] = "r";
 
 /* Output */
-const char MSG_INVALID_IP[] = "Invalid value for ip argument, checking if it's an address\n";
+const char MSG_INVALID_IP[] = "Address isn't a valid IP, checking if it's a valid address\n";
 const char MSG_INVALID_PORT[] = "Invalid value for port argument\n";
 
 const char MSG_UNKNOWN_CMD[] = "Unknown command\n";
@@ -40,6 +40,6 @@ const char MSG_INVALID_UID[] = "Invalid user ID argument\n";
 const char MSG_INVALID_PASSWD[] = "Invalid password argument\n";
 const char MSG_INVALID_GNAME[] = "Invalid group name argument\n";
 const char MSG_INVALID_FNAME[] = "Invalid file name argument\n";
-const char MSG_INVALID_POST_CMD[] = "Invalid post command format\n";
+const char MSG_INVALID_POST_CMD[] = "Invalid post command\n";
 
 #endif //CLIENT_CLIENT_INTERFACE_H
