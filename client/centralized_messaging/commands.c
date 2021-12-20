@@ -5,16 +5,17 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdbool.h>
+#include <netinet/in.h>
 
 #include "commands.h"
 
 #define MAX_INPUT_SIZE 128
 
- bool logged_in = false;
- char *uid, *pass, *group_id;
+bool logged_in = false;
+char *uid, *pass, *gid;
 
 char command_buffer[MAX_INPUT_SIZE];
-struct addrinfo* server_address_udp, *server_address_tcp;
+struct addrinfo *server_address;
 
 /**
  * @brief Sets up the UDP socket
@@ -22,83 +23,90 @@ struct addrinfo* server_address_udp, *server_address_tcp;
  * @param ip
  * @param port
  */
-void setupServerAddresses(char* ip, char* port)
-{
-	struct addrinfo hints;
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_DGRAM;
-
-	int errcode;
-	if ((errcode = getaddrinfo(ip, port, &hints, &server_address_udp)) != 0)
-	{
-		fprintf(stderr, "Error on getaddrinfo (udp): %s\n", gai_strerror(errcode));
-		return;
-	}
-
-	hints.ai_socktype = SOCK_STREAM;
-	if ((errcode = getaddrinfo(ip, port, &hints, &server_address_tcp)) != 0)
-	{
-		fprintf(stderr, "Error on getaddrinfo (tcp): %s\n", gai_strerror(errcode));
-		return;
-	}
+int setupServerAddresses(char *ip, char *port) {
+  struct addrinfo hints;
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_DGRAM;
+  int errcode;
+  if ((errcode = getaddrinfo(ip, port, &hints, &server_address)) != 0) {
+    fprintf(stderr, "Error on getaddrinfo (udp): %s\n", gai_strerror(errcode));
+    return -1;
+  }
+  return 0;
 }
 
 /**
  * Frees the server adresses
  */
-void freeServerAdresses()
-{
-	free(server_address_udp);
-	free(server_address_tcp);
+void freeServerAdress() {
+  free(server_address);
 }
-
 
 /**
  * @brief Sends a command to the server using UDP protocol
  *
  * @param command
  */
-void sendCommandUDP(char* command)
-{
-	int fd_udp;
-	if ((fd_udp = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-	{
-		fprintf(stderr, "Couldn't send command. Error creating UDP socket.\n");
-        return;
-	}
+int sendCommandUDP(char *command, char *res) {
+  int fd;
 
-	ssize_t n = sendto(fd_udp, command, strlen(command), 0, server_address_udp->ai_addr, server_address_udp->ai_addrlen);
-	if (n == -1)
-	{
-		fprintf(stderr, "Couldn't send command. Error sending command\n");
-	}
+  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+    fprintf(stderr, "Couldn't send command. Error creating UDP socket.\n");
+    return -1;
+  }
 
-	close(fd_udp);
+  ssize_t n = sendto(fd, command, strlen(command), 0, server_address->ai_addr, server_address->ai_addrlen);
+  if (n == -1) {
+    fprintf(stderr, "Couldn't send command. Error sending command.\n");
+    return -1;
+  }
+
+  struct sockaddr_in addr;
+  socklen_t addrlen = sizeof(addr);
+  n = recvfrom(fd, res, sizeof(res), 0, (struct sockaddr *) &addr, &addrlen);
+  if (n == -1) {
+    fprintf(stderr, "Error receiving server's response.\n");
+    return -1;
+  }
+
+  close(fd);
+  return 0;
 }
-
 
 /**
  * @brief Sends a command to the server using TCP protocol
  *
  * @param command
+ * @param res
  */
-void sendCommandTCP(char* command) // TODO
-{
-	int fd_tcp;
-	if ((fd_tcp = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-	{
-		fprintf(stderr, "Couldn't send command. Error creating TCP socket.\n");
-		return;
-	}
+int sendCommandTCP(char *command, char *res) {
+  int fd;
+  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    fprintf(stderr, "Couldn't send command. Error creating TCP socket.\n");
+    return -1;
+  }
 
-	ssize_t n = sendto(fd_tcp, command, strlen(command), 0, server_address_tcp->ai_addr, server_address_tcp->ai_addrlen);
-	if (n == -1)
-	{
-		fprintf(stderr, "Couldn't send command. Error sending command\n");
-	}
+  ssize_t n = connect(fd, server_address->ai_addr, server_address->ai_addrlen);
+  if (n == -1) {
+    fprintf(stderr, "Couldn't send command. Error establishing a connection with server.\n");
+    return -1;
+  }
 
-	close(fd_tcp);
+  n = write(fd, command, strlen(command));
+  if (n == -1) {
+    fprintf(stderr, "Couldn't send command. Error sending command.\n");
+    return -1;
+  }
+
+  n = read(fd, res, 128);
+  if (n == -1) {
+    fprintf(stderr, "Error receiving server's response.\n");
+    return -1;
+  }
+
+  close(fd);
+  return 0;
 }
 
 /**
@@ -110,13 +118,13 @@ void sendCommandTCP(char* command) // TODO
  * @param uid_arg
  * @param pass_arg
  */
-void registerUser(char* uid_arg, char* pass_arg)
-{
-	// Server
-	sprintf(command_buffer, "REG %s %s\n", uid_arg, pass_arg);
-	sendCommandUDP(command_buffer);
-	// (consoante o server) Consultar Local State
-	printf("registerUser %s %s\n", uid_arg, pass_arg);
+void registerUser(char *uid_arg, char *pass_arg) {
+  // Server
+  sprintf(command_buffer, "REG %s %s\n", uid_arg, pass_arg);
+  char buffer[128];
+  sendCommandUDP(command_buffer, buffer);
+  // (consoante o server) Consultar Local State
+  printf("registerUser %s %s\n", uid_arg, pass_arg);
 }
 
 /**
@@ -129,11 +137,11 @@ void registerUser(char* uid_arg, char* pass_arg)
  * @param uid_arg
  * @param pass_arg
  */
-void unregisterUser(char* uid_arg, char* pass_arg)
-{
-	sprintf(command_buffer, "UNR %s %s\n", uid_arg, pass_arg);
-	sendCommandUDP(command_buffer);
-	printf("unregisterUser %s %s\n", uid_arg, pass_arg);
+void unregisterUser(char *uid_arg, char *pass_arg) {
+  sprintf(command_buffer, "UNR %s %s\n", uid_arg, pass_arg);
+  char buffer[128];
+  sendCommandUDP(command_buffer, buffer);
+  printf("unregisterUser %s %s\n", uid_arg, pass_arg);
 }
 
 /**
@@ -145,11 +153,11 @@ void unregisterUser(char* uid_arg, char* pass_arg)
  * @param uid_arg
  * @param pass_arg
  */
-void login(char* uid_arg, char* pass_arg)
-{
-	sprintf(command_buffer, "LOG %s %s\n", uid_arg, pass_arg);
-	sendCommandUDP(command_buffer);
-	printf("login %s %s\n", uid_arg, pass_arg);
+void login(char *uid_arg, char *pass_arg) {
+  sprintf(command_buffer, "LOG %s %s\n", uid_arg, pass_arg);
+  char buffer[128];
+  sendCommandUDP(command_buffer, buffer);
+  printf("login %s %s\n", uid_arg, pass_arg);
 }
 
 /**
@@ -158,28 +166,30 @@ void login(char* uid_arg, char* pass_arg)
  * then be issued.
  *
  */
-void logout()
-{
-	sprintf(command_buffer, "OUT %s %s\n", uid, pass);
-	sendCommandUDP(command_buffer);
-	printf("logout\n");
+void logout() {
+  sprintf(command_buffer, "OUT %s %s\n", uid, pass);
+  char buffer[128];
+  if (logged_in) {
+    sendCommandUDP(command_buffer, buffer);
+  }
+  uid[0] = '\0';
+  pass[0] = '\0';
+  printf("logout\n");
 }
 /**
  * @brief Following this command the User application locally
  * displays the UID of the user that is logged in.
  */
-void showUID()
-{
-	printf("showUID\n");
+void showUID() {
+  printf("showUID\n");
 }
 
 /**
- * @brief Following this command the User application terminates, after making that all TCP
+ * @brief Following this command the User application terminates, after making sure that all TCP
  * connections are closed.
  */
-void exitClient()
-{
-	printf("exit\n");
+void exitClient() {
+  printf("exit\n");
 }
 
 /**
@@ -188,11 +198,11 @@ void exitClient()
  * should be displayed as a list of group IDs (GID) and names (GName).
  *
  */
-void groups()
-{
-	sprintf(command_buffer, "GLS\n");
-	sendCommandUDP(command_buffer);
-	printf("groups\n");
+void groups() {
+  sprintf(command_buffer, "GLS\n");
+  char buffer[128];
+  sendCommandUDP(command_buffer, buffer);
+  printf("groups\n");
 }
 
 /**
@@ -206,11 +216,11 @@ void groups()
  * @param gid_arg
  * @param gid_name_arg
  */
-void subscribe(char* gid_arg, char* gid_name_arg)
-{
-	sprintf(command_buffer, "GSR %s %s\n", gid_arg, gid_name_arg);
-	sendCommandUDP(command_buffer);
-	printf("subscribe %s %s\n", gid_arg, gid_name_arg);
+void subscribe(char *gid_arg, char *gid_name_arg) {
+  sprintf(command_buffer, "GSR %s %s\n", gid_arg, gid_name_arg);
+  char buffer[128];
+  sendCommandUDP(command_buffer, buffer);
+  printf("subscribe %s %s\n", gid_arg, gid_name_arg);
 }
 
 /**
@@ -221,11 +231,11 @@ void subscribe(char* gid_arg, char* gid_name_arg)
  *
  * @param gid_arg
  */
-void unsubscribe(char* gid_arg)
-{
-	sprintf(command_buffer, "GUR %s %s\n", uid, gid_arg);
-	sendCommandUDP(command_buffer);
-	printf("unsubscribe %s\n", gid_arg);
+void unsubscribe(char *gid_arg) {
+  sprintf(command_buffer, "GUR %s %s\n", uid, gid_arg);
+  char buffer[128];
+  sendCommandUDP(command_buffer, buffer);
+  printf("unsubscribe %s\n", gid_arg);
 }
 
 /**
@@ -235,11 +245,11 @@ void unsubscribe(char* gid_arg)
  * as a list of group IDs and names.
  *
  */
-void my_groups()
-{
-	sprintf(command_buffer, "GLM %s\n", uid);
-	sendCommandUDP(command_buffer);
-	printf("my_groups\n");
+void my_groups() {
+  sprintf(command_buffer, "GLM %s\n", uid);
+  char buffer[128];
+  sendCommandUDP(command_buffer, buffer);
+  printf("my_groups\n");
 }
 
 /**
@@ -249,22 +259,17 @@ void my_groups()
  *
  * @param gid_arg
  */
-void selectGroup(char* gid_arg)
-{
-	sprintf(command_buffer, "\n");
-	sendCommandUDP(command_buffer);
-	printf("select %s\n", gid_arg);
+void selectGroup(char *gid_arg) {
+  strcpy(gid, gid_arg);
+  printf("select %s\n", gid_arg);
 }
 
 /**
  * @brief Following this command the User application locally
  * displays the GID of the selected group.
  */
-void showGID()
-{
-	sprintf(command_buffer, "\n");
-	sendCommandUDP(command_buffer);
-	printf("showGID\n");
+void showGID() {
+  printf("%s\n", gid);
 }
 
 /**
@@ -273,11 +278,11 @@ void showGID()
  * the currently subscribed group GID.
  *
  */
-void ulist()
-{
-	sprintf(command_buffer, "\n");
-	sendCommandUDP(command_buffer);
-	printf("ulist\n");
+void ulist() {
+  sprintf(command_buffer, "%s\n", gid);
+  char buffer[128];
+  sendCommandTCP(command_buffer, buffer);
+  printf("%s\n", buffer);
 }
 
 /**
@@ -290,16 +295,12 @@ void ulist()
  * @param message
  * @param fname
  */
-void post(char* message, char* fname) // TODO file size and data, and trim message
+void post(char *message, char *fname) // TODO file size and data, and trim message
 {
-	sprintf(command_buffer, "\n");
-	sendCommandUDP(command_buffer);
-	if (fname == NULL)
-	{
-		printf("post %s\n", message);
-		return;
-	}
-	printf("post %s %s\n", message, fname);
+  snprintf(command_buffer, "POST %s %s\n\0", message, fname);
+  char buffer[128];
+  sendCommandTCP(command_buffer, buffer);
+  printf("%s\n", buffer);
 }
 
 /**
@@ -315,9 +316,9 @@ void post(char* message, char* fname) // TODO file size and data, and trim messa
  *
  * @param mid
  */
-void retrieve(char* mid)
-{
-	sprintf(command_buffer, "\n");
-	sendCommandUDP(command_buffer);
-	printf("retrieve %s\n", mid);
+void retrieve(char *mid) {
+  sprintf(command_buffer, "\n");
+  char buffer[128];
+  sendCommandTCP(command_buffer, buffer);
+  printf("%s\n", buffer);
 }

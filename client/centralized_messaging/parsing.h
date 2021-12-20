@@ -14,14 +14,13 @@
  * @param gid string that represents a group ID
  * @return int
  */
-int parseGID(char* gid)
-{
-	if (strlen(gid) == 1 && gid[0] == '0')
-		return 0;
-	int gid_parsed = strtol(gid, NULL, 10);
-	if (strlen(gid) == 2 && gid_parsed != 0)
-		return gid_parsed;
-	return -1;
+int parseGID(char *gid) {
+  if (strlen(gid) == 1 && gid[0] == '0')
+    return 0;
+  int gid_parsed = strtol(gid, NULL, 10);
+  if (strlen(gid) == 2 && gid_parsed != 0)
+    return gid_parsed;
+  return -1;
 }
 
 /**
@@ -31,14 +30,13 @@ int parseGID(char* gid)
  * @param uid string that represents a user ID
  * @return int
  */
-int parseUID(char* uid)
-{
-	if (strlen(uid) != 5)
-		return -1;
-	int uid_parsed = strtol(uid, NULL, 10);
-	if (!uid_parsed && strcmp(uid, "00000") != 0)
-		return -1;
-	return uid_parsed;
+int parseUID(char *uid) {
+  if (strlen(uid) != 5)
+    return -1;
+  int uid_parsed = strtol(uid, NULL, 10);
+  if (!uid_parsed && strcmp(uid, "00000") != 0)
+    return -1;
+  return uid_parsed;
 }
 
 /**
@@ -49,14 +47,13 @@ int parseUID(char* uid)
  * @param password string that represents a password
  * @return int
  */
-int parsePassword(char* password)
-{
-	regex_t re;
-	if (regcomp(&re, "^[a-zA-Z0-9]{8}$", REG_EXTENDED | REG_NOSUB) != 0)
-		return REG_NOMATCH;
-	int res = regexec(&re, password, 0, NULL, 0);
-	regfree(&re);
-	return res;
+int parsePassword(char *password) {
+  regex_t re;
+  if (regcomp(&re, "^[a-zA-Z0-9]{8}$", REG_EXTENDED | REG_NOSUB) != 0)
+    return REG_NOMATCH;
+  int res = regexec(&re, password, 0, NULL, 0);
+  regfree(&re);
+  return res;
 }
 
 /**
@@ -67,14 +64,13 @@ int parsePassword(char* password)
  * @param gname string that represents a group name
  * @return int
  */
-int parseGName(char* gname)
-{
-	regex_t re;
-	if (regcomp(&re, "^[a-zA-Z0-9_-]{1,24}$", REG_EXTENDED | REG_NOSUB) != 0)
-		return REG_NOMATCH;
-	int res = regexec(&re, gname, 0, NULL, 0);
-	regfree(&re);
-	return res;
+int parseGName(char *gname) {
+  regex_t re;
+  if (regcomp(&re, "^[a-zA-Z0-9_-]{1,24}$", REG_EXTENDED | REG_NOSUB) != 0)
+    return REG_NOMATCH;
+  int res = regexec(&re, gname, 0, NULL, 0);
+  regfree(&re);
+  return res;
 }
 
 /**
@@ -84,11 +80,10 @@ int parseGName(char* gname)
  * @param mid string that represents a message ID
  * @return int
  */
-int parseMID(char* mid)
-{
-	if (strlen(mid) != 4)
-		return 0;
-	return strtol(mid, NULL, 10);
+int parseMID(char *mid) {
+  if (strlen(mid) != 4)
+    return 0;
+  return strtol(mid, NULL, 10);
 }
 
 /**
@@ -98,12 +93,11 @@ int parseMID(char* mid)
  * @param message string that represents a message text
  * @return int
  */
-int parseMessageText(char* message)
-{
-	int len = strlen(message);
-	if (len > (T_SIZE))
-		return -1;
-	return 0;
+int parseMessageText(char *message) {
+  int len = strlen(message);
+  if (len > (T_SIZE))
+    return -1;
+  return 0;
 }
 
 /**
@@ -115,14 +109,13 @@ int parseMessageText(char* message)
  * @param fname string that represents a filename
  * @return int
  */
-int parseFName(char* fname)
-{
-	regex_t re; // TODO: make this const
-	if (strlen(fname) > 24 || regcomp(&re, "^[a-zA-Z0-9_.-]+[.]{1}[A-Za-z]{3}$", REG_EXTENDED | REG_NOSUB) != 0)
-		return REG_NOMATCH;
-	int res = regexec(&re, fname, 0, NULL, 0);
-	regfree(&re);
-	return res;
+int parseFName(char *fname) {
+  regex_t re; // TODO: make this const
+  if (strlen(fname) > 24 || regcomp(&re, "^[a-zA-Z0-9_.-]+[.]{1}[A-Za-z]{3}$", REG_EXTENDED | REG_NOSUB) != 0)
+    return REG_NOMATCH;
+  int res = regexec(&re, fname, 0, NULL, 0);
+  regfree(&re);
+  return res;
 }
 
 #endif //CENTRALIZED_MESSAGING_PARSING_H

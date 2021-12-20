@@ -14,12 +14,10 @@
  *
  * @param ip ip argument in string format
  */
-void parseIPArg(char* ip)
-{
-	if (!inet_pton(AF_INET, ip, NULL))
-	{
-		fprintf(stderr, MSG_INVALID_IP);
-	}
+void parseIPArg(char *ip) {
+  if (!inet_pton(AF_INET, ip, NULL)) {
+    fprintf(stderr, MSG_INVALID_IP);
+  }
 }
 
 /**
@@ -27,21 +25,17 @@ void parseIPArg(char* ip)
  *
  * @param port port argument in string format
  */
-void parsePortArg(char* port)
-{
-	for (int i = 0; i < strlen(port); i++)
-	{
-		if (port[i] != '0')
-		{
-			int port_parsed = strtol(port, NULL, 10);
-			if (port_parsed <= 0 || port_parsed > 65535)
-			{
-				fprintf(stderr, MSG_INVALID_PORT);
-				exit(EXIT_FAILURE);
-			}
-			return;
-		}
-	}
+void parsePortArg(char *port) {
+  for (int i = 0; i < strlen(port); i++) {
+    if (port[i] != '0') {
+      int port_parsed = strtol(port, NULL, 10);
+      if (port_parsed <= 0 || port_parsed > 65535) {
+        fprintf(stderr, MSG_INVALID_PORT);
+        exit(EXIT_FAILURE);
+      }
+      return;
+    }
+  }
 }
 
 #endif //_PARSING_H_
