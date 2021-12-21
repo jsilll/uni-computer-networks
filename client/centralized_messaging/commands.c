@@ -14,7 +14,7 @@
 bool logged_in = false;
 char *uid, *pass, *gid;
 
-char command_buffer[MAX_INPUT_SIZE];
+char command_buffer[MAX_INPUT_SIZE], response_buffer[MAX_INPUT_SIZE];
 struct addrinfo *server_address;
 
 /**
@@ -23,7 +23,7 @@ struct addrinfo *server_address;
  * @param ip
  * @param port
  */
-int setupServerAddresses(char *ip, char *port) {
+int setupServerAddress(char *ip, char *port) {
   struct addrinfo hints;
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;
@@ -39,7 +39,7 @@ int setupServerAddresses(char *ip, char *port) {
 /**
  * Frees the server adresses
  */
-void freeServerAdress() {
+void freeServerAddress() {
   free(server_address);
 }
 
@@ -56,16 +56,16 @@ int sendCommandUDP(char *command, char *res) {
     return -1;
   }
 
-  ssize_t n = sendto(fd, command, strlen(command), 0, server_address->ai_addr, server_address->ai_addrlen);
-  if (n == -1) {
+  if (sendto(fd, command, strlen(command), 0, server_address->ai_addr, server_address->ai_addrlen) == -1) {
+    close(fd);
     fprintf(stderr, "Couldn't send command. Error sending command.\n");
     return -1;
   }
 
   struct sockaddr_in addr;
   socklen_t addrlen = sizeof(addr);
-  n = recvfrom(fd, res, sizeof(res), 0, (struct sockaddr *) &addr, &addrlen);
-  if (n == -1) {
+  if (recvfrom(fd, res, MAX_INPUT_SIZE, 0, (struct sockaddr *) &addr, &addrlen) == -1) {
+    close(fd);
     fprintf(stderr, "Error receiving server's response.\n");
     return -1;
   }
@@ -87,20 +87,20 @@ int sendCommandTCP(char *command, char *res) {
     return -1;
   }
 
-  ssize_t n = connect(fd, server_address->ai_addr, server_address->ai_addrlen);
-  if (n == -1) {
+  if (connect(fd, server_address->ai_addr, server_address->ai_addrlen) == -1) {
+    close(fd);
     fprintf(stderr, "Couldn't send command. Error establishing a connection with server.\n");
     return -1;
   }
 
-  n = write(fd, command, strlen(command));
-  if (n == -1) {
+  if (write(fd, command, strlen(command)) == -1) {
+    close(fd);
     fprintf(stderr, "Couldn't send command. Error sending command.\n");
     return -1;
   }
 
-  n = read(fd, res, 128);
-  if (n == -1) {
+  if (read(fd, res, MAX_INPUT_SIZE) == -1) {
+    close(fd);
     fprintf(stderr, "Error receiving server's response.\n");
     return -1;
   }
@@ -119,12 +119,10 @@ int sendCommandTCP(char *command, char *res) {
  * @param pass_arg
  */
 void registerUser(char *uid_arg, char *pass_arg) {
-  // Server
   sprintf(command_buffer, "REG %s %s\n", uid_arg, pass_arg);
-  char buffer[128];
-  sendCommandUDP(command_buffer, buffer);
-  // (consoante o server) Consultar Local State
-  printf("registerUser %s %s\n", uid_arg, pass_arg);
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -139,9 +137,9 @@ void registerUser(char *uid_arg, char *pass_arg) {
  */
 void unregisterUser(char *uid_arg, char *pass_arg) {
   sprintf(command_buffer, "UNR %s %s\n", uid_arg, pass_arg);
-  char buffer[128];
-  sendCommandUDP(command_buffer, buffer);
-  printf("unregisterUser %s %s\n", uid_arg, pass_arg);
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -155,9 +153,9 @@ void unregisterUser(char *uid_arg, char *pass_arg) {
  */
 void login(char *uid_arg, char *pass_arg) {
   sprintf(command_buffer, "LOG %s %s\n", uid_arg, pass_arg);
-  char buffer[128];
-  sendCommandUDP(command_buffer, buffer);
-  printf("login %s %s\n", uid_arg, pass_arg);
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -168,20 +166,16 @@ void login(char *uid_arg, char *pass_arg) {
  */
 void logout() {
   sprintf(command_buffer, "OUT %s %s\n", uid, pass);
-  char buffer[128];
-  if (logged_in) {
-    sendCommandUDP(command_buffer, buffer);
-  }
-  uid[0] = '\0';
-  pass[0] = '\0';
-  printf("logout\n");
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 /**
  * @brief Following this command the User application locally
  * displays the UID of the user that is logged in.
  */
 void showUID() {
-  printf("showUID\n");
+  printf("(local) showuid\n");
 }
 
 /**
@@ -189,7 +183,7 @@ void showUID() {
  * connections are closed.
  */
 void exitClient() {
-  printf("exit\n");
+  printf("(local) exit\n");
 }
 
 /**
@@ -200,9 +194,9 @@ void exitClient() {
  */
 void groups() {
   sprintf(command_buffer, "GLS\n");
-  char buffer[128];
-  sendCommandUDP(command_buffer, buffer);
-  printf("groups\n");
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -218,9 +212,9 @@ void groups() {
  */
 void subscribe(char *gid_arg, char *gid_name_arg) {
   sprintf(command_buffer, "GSR %s %s\n", gid_arg, gid_name_arg);
-  char buffer[128];
-  sendCommandUDP(command_buffer, buffer);
-  printf("subscribe %s %s\n", gid_arg, gid_name_arg);
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -233,9 +227,9 @@ void subscribe(char *gid_arg, char *gid_name_arg) {
  */
 void unsubscribe(char *gid_arg) {
   sprintf(command_buffer, "GUR %s %s\n", uid, gid_arg);
-  char buffer[128];
-  sendCommandUDP(command_buffer, buffer);
-  printf("unsubscribe %s\n", gid_arg);
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -247,9 +241,9 @@ void unsubscribe(char *gid_arg) {
  */
 void my_groups() {
   sprintf(command_buffer, "GLM %s\n", uid);
-  char buffer[128];
-  sendCommandUDP(command_buffer, buffer);
-  printf("my_groups\n");
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandUDP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -261,7 +255,7 @@ void my_groups() {
  */
 void selectGroup(char *gid_arg) {
   strcpy(gid, gid_arg);
-  printf("select %s\n", gid_arg);
+  printf("(local) select %s\n", gid_arg);
 }
 
 /**
@@ -269,7 +263,7 @@ void selectGroup(char *gid_arg) {
  * displays the GID of the selected group.
  */
 void showGID() {
-  printf("%s\n", gid);
+  printf("(local) %s\n", gid);
 }
 
 /**
@@ -279,10 +273,10 @@ void showGID() {
  *
  */
 void ulist() {
-  sprintf(command_buffer, "%s\n", gid);
-  char buffer[128];
-  sendCommandTCP(command_buffer, buffer);
-  printf("%s\n", buffer);
+  sprintf(command_buffer, "%s\n\0", gid);
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandTCP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -297,10 +291,14 @@ void ulist() {
  */
 void post(char *message, char *fname) // TODO file size and data, and trim message
 {
-  snprintf(command_buffer, "POST %s %s\n\0", message, fname);
-  char buffer[128];
-  sendCommandTCP(command_buffer, buffer);
-  printf("%s\n", buffer);
+  if (fname != NULL) {
+    sprintf(command_buffer, "POST %s %s\n", message, fname);
+  } else {
+    sprintf(command_buffer, "POST %s\n", message);
+  }
+  bzero(response_buffer, strlen(response_buffer));
+  sendCommandTCP(command_buffer, response_buffer);
+  printf("%s", response_buffer);
 }
 
 /**
@@ -317,8 +315,5 @@ void post(char *message, char *fname) // TODO file size and data, and trim messa
  * @param mid
  */
 void retrieve(char *mid) {
-  sprintf(command_buffer, "\n");
-  char buffer[128];
-  sendCommandTCP(command_buffer, buffer);
-  printf("%s\n", buffer);
+  // TODO
 }

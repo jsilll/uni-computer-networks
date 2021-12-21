@@ -2,8 +2,8 @@
 #define CENTRALIZED_MESSAGING_API_H
 
 /* Server Addresses (UDP and TCP) */
-int setupServerAddresses(char *ip, char *port);
-void freeServerAdress();
+int setupServerAddress(char *ip, char *port);
+void freeServerAddress();
 
 /* Client Commands */
 void registerUser(char *uid_arg, char *pass_arg);

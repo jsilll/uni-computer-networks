@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   printf("Centralized Messaging Client Initialized\n");
   printf("PORT: %s ADDRESS: %s\n", PORT, ADDRESS);
 
-  if (setupServerAddresses(ADDRESS, PORT) != 0) {
+  if (setupServerAddress(ADDRESS, PORT) != 0) {
     exit(EXIT_FAILURE);
   }
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   while (fgets(line, sizeof(line) / sizeof(char), stdin))
     execCommand(line);
 
-  // TODO SIGINT Handler (centralized messaging) freeServerAdress();
+  // TODO SIGINT Handler (centralized messaging) freeServerAddress();
 }
 
 /**
