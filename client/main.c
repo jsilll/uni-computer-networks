@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   printf("Centralized Messaging Client Initialized\n");
   printf("PORT: %s ADDRESS: %s\n", PORT, ADDRESS);
 
-  if (setupServerAddress(ADDRESS, PORT) != 0) {
+  if (setupServerAddresses(ADDRESS, PORT) != 0) {
     exit(EXIT_FAILURE);
   }
 
