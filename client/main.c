@@ -10,10 +10,9 @@
 
 #include "parsing.h"
 #include "centralized_messaging/commands.h"
-#include "centralized_messaging/parsing.h"
 
 #define DEFAULT_PORT "58006"
-// #define T_SIZE 240
+#define T_SIZE 240
 #define MAX_INPUT_SIZE T_SIZE + 32
 
 char PORT[MAX_INPUT_SIZE], ADDRESS[MAX_INPUT_SIZE];
@@ -122,27 +121,15 @@ void execCommand(char *line) {
   if (!strcmp(op, CMD_POST)) {
     op[0] = arg1[0] = arg2[0] = '\0';
     numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
-
     if (numTokens < 2) {
       fprintf(stderr, MSG_INVALID_POST_CMD);
-      return;
+    } else if ((!strlen(arg2) && line[strlen(line) - 2] != '"')) {
+      fprintf(stderr, MSG_INVALID_POST_CMD);
+    } else if (strlen(arg2)) {
+      PST(arg1, arg2);
+    } else {
+      PST(arg1, NULL);
     }
-
-    if ((!strlen(arg2) && line[strlen(line) - 2] != '"') || (parseMessageText(arg1) == -1)) {
-      fprintf(stderr, MSG_INVALID_TXT_MSG);
-      return;
-    }
-
-    if (strlen(arg2)) {
-
-      if (parseFName(arg2) == REG_NOMATCH) {
-        fprintf(stderr, MSG_INVALID_FNAME);
-        return;
-      }
-
-      return post(arg1, arg2);
-    }
-    return post(arg1, NULL);
   }
 
   if (numTokens == 4) {
@@ -153,84 +140,50 @@ void execCommand(char *line) {
   switch (numTokens) {
     case 1:
       if (!strcmp(op, CMD_LOGOUT)) {
-        return logout();
+        OUT();
       } else if (!strcmp(op, CMD_EXIT)) {
-        return exitClient();
+        exitClient();
       } else if (!strcmp(op, CMD_GROUPS) || !strcmp(op, CMD_GROUPS_SHORT)) {
-        return groups();
+        GLS();
       } else if (!strcmp(op, CMD_MY_GROUPS) || !strcmp(op, CMD_MY_GROUPS_SHORT)) {
-        return my_groups();
+        GLM();
       } else if (!strcmp(op, CMD_ULIST) || !strcmp(op, CMD_ULIST_SHORT)) {
-        return ulist();
+        ULS();
       } else if (!strcmp(op, CMD_SHOW_UID) || !strcmp(op, CMD_SHOW_UID_SHORT)) {
-        return showUID();
+        showUID();
       } else if (!strcmp(op, CMD_SHOW_GID) || !strcmp(op, CMD_SHOW_GID_SHORT)) {
-        return showGID();
+        showGID();
+      } else {
+        fprintf(stderr, MSG_UNKNOWN_CMD);
       }
-      fprintf(stderr, MSG_UNKNOWN_CMD);
       return;
+
     case 2:
       if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT)) {
-        if ((parseGID(arg1)) <= 0) {
-          fprintf(stderr, MSG_INVALID_GID);
-          return;
-        }
-        return unsubscribe(arg1);
+        GUR(arg1);
       } else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT)) {
-        if ((parseGID(arg1)) <= 0) {
-          fprintf(stderr, MSG_INVALID_GID);
-          return;
-        }
-        return selectGroup(arg1);
+        selectGroup(arg1);
       } else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT)) {
-        if (!(parseMID(arg1))) {
-          fprintf(stderr, MSG_INVALID_MID);
-          return;
-        }
-        return retrieve(arg1);
+        RTV(arg1);
+      } else {
+        fprintf(stderr, MSG_UNKNOWN_CMD);
       }
-      fprintf(stderr, MSG_UNKNOWN_CMD);
       return;
+
     case 3:
       if (!strcmp(op, CMD_REGISTER)) {
-        if ((parseUID(arg1)) == -1) {
-          fprintf(stderr, MSG_INVALID_UID);
-          return;
-        } else if (parsePassword(arg2) == REG_NOMATCH) {
-          fprintf(stderr, MSG_INVALID_PASSWD);
-          return;
-        }
-        return registerUser(arg1, arg2);
+        REG(arg1, arg2);
       } else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT)) {
-        if ((parseUID(arg1)) == -1) {
-          fprintf(stderr, MSG_INVALID_UID);
-          return;
-        } else if (parsePassword(arg2) == REG_NOMATCH) {
-          fprintf(stderr, MSG_INVALID_PASSWD);
-          return;
-        }
-        return unregisterUser(arg1, arg2);
+        UNR(arg1, arg2);
       } else if (!strcmp(op, CMD_LOGIN)) {
-        if ((parseUID(arg1)) == -1) {
-          fprintf(stderr, MSG_INVALID_UID);
-          return;
-        } else if (parsePassword(arg2) == REG_NOMATCH) {
-          fprintf(stderr, MSG_INVALID_PASSWD);
-          return;
-        }
-        return login(arg1, arg2);
+        LOG(arg1, arg2);
       } else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT)) {
-        if ((parseGID(arg1)) == -1) {
-          fprintf(stderr, MSG_INVALID_GID);
-          return;
-        } else if (parseGName(arg2) == REG_NOMATCH) {
-          fprintf(stderr, MSG_INVALID_GNAME);
-          return;
-        }
-        return subscribe(arg1, arg2);
+        GSR(arg1, arg2);
+      } else {
+        fprintf(stderr, MSG_UNKNOWN_CMD);
       }
-      fprintf(stderr, MSG_UNKNOWN_CMD);
       return;
+
     default: fprintf(stderr, MSG_UNKNOWN_CMD);
   }
 }

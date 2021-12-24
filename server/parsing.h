@@ -10,7 +10,7 @@
 void parsePortArg(char *port) {
   for (int i = 0; i < strlen(port); i++) {
     if (port[i] != '0') {
-      int port_parsed = strtol(port, NULL, 10);
+      long port_parsed = strtol(port, NULL, 10);
       if (port_parsed <= 0 || port_parsed > 65535) {
         fprintf(stderr, "Invalid port argument\n");
         exit(EXIT_FAILURE);

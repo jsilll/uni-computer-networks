@@ -48,12 +48,12 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose) {
     if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH) {    // ROU OK
       strcpy(response_buffer, "ROU NOK\n");
     } else {
-    OUT(arg1, arg2); // TODO
-    strcpy(response_buffer, "ROU OK\n");
+      OUT(arg1, arg2); // TODO
+      strcpy(response_buffer, "ROU OK\n");
     }
   } else if (!strcmp(op, "GLS")) {
     GLS(); // TODO, tem de retornar char*
-    strcpy(response_buffer, "RGL N GID GName MID\n");
+    strcpy(response_buffer, "RGL N[GID GName MID]*\n");
   } else if (!strcmp(op, "GSR")) {
     if (parseUID(arg1) == -1) {
       strcpy(response_buffer, "RGS E_USR\n");
@@ -102,17 +102,25 @@ void handleTCPCommand(int connfd, bool verbose) {
   int numTokens = sscanf(command_buffer, "%s %s %s %s %s %s %s %s", op, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 
   if (!strcmp(op, "ULS")) {
-    ULS(arg1);
-    // GID
+    if (parseGID(arg1)) {
+      strcpy(response_buffer, "RGM NOK\n");
+    } else {
+      ULS(arg1); // TODO NOK
+      strcpy(response_buffer, "RGM N[ GID GName MID]*\n");
+    }
   }
-  if (!strcmp(op, "PST")) {
+  else if (!strcmp(op, "PST")) {
     // TODO usar numTokens
     // UID GID Tsize text [Fname Fsize data]
     PST(arg1, arg2, atoi(arg3), arg4, arg5, atoi(arg6), arg7);
   }
-  if (!strcmp(op, "RTV")) {
-    // UID GID MID
-    RTV(arg1, arg2, arg3);
+  else if (!strcmp(op, "RTV")) {
+    if (parseUID(arg1) == -1 ||  parseGID(arg1) == -1 || !parseMID(arg1)) {
+      strcpy(response_buffer, "RRT NOK\n");
+    } else {
+      RTV(arg1, arg2, arg3); // TODO
+      strcpy(response_buffer, "RRT status [N[ MID UID Tsize text [/ Fname Fsize data]]*]\n");
+    }
   }
 
   write(connfd, response_buffer, strlen(response_buffer));
