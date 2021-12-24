@@ -6,41 +6,44 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <signal.h>
 
 #include "parsing.h"
 #include "centralized_messaging/commands.h"
 #include "centralized_messaging/parsing.h"
 
 #define DEFAULT_PORT "58006"
+// #define T_SIZE 240
 #define MAX_INPUT_SIZE T_SIZE + 32
 
 char PORT[MAX_INPUT_SIZE], ADDRESS[MAX_INPUT_SIZE];
 
-/* Execution Arguments */
+void signalHandler(int signum);
 void setDefaultAddress();
 void loadInitArgs(int argc, char *argv[]);
-
-/* Command Execution */
 void execCommand(char *line);
 
 int main(int argc, char *argv[]) {
+  signal(SIGTERM, signalHandler);
   strcpy(PORT, DEFAULT_PORT);
   setDefaultAddress();
-
   loadInitArgs(argc, argv);
-
   printf("Centralized Messaging Client Initialized\n");
   printf("PORT: %s ADDRESS: %s\n", PORT, ADDRESS);
-
-  if (setupServerAddresses(ADDRESS, PORT) != 0) {
+  if (setupServerAddresses(ADDRESS, PORT) != 0)
     exit(EXIT_FAILURE);
-  }
-
   char line[MAX_INPUT_SIZE];
   while (fgets(line, sizeof(line) / sizeof(char), stdin))
     execCommand(line);
-
-  // TODO SIGINT Handler (centralized messaging) freeServerAddress();
+}
+/**
+ * Signal Handler for terminating the client
+ * @param signum
+ */
+void signalHandler(int signum) {
+  // TODO close all TCP connections
+  freeServerAddress();
+  exit(signum);
 }
 
 /**
@@ -68,7 +71,7 @@ void setDefaultAddress() {
 
   char buffer[INET_ADDRSTRLEN];
   struct in_addr *addr = &((struct sockaddr_in *) host_addrinfo->ai_addr)->sin_addr;
-  strcpy(ADDRESS, inet_ntop(host_addrinfo->ai_family, addr, buffer, sizeof buffer));
+  strcpy(ADDRESS, inet_ntop(host_addrinfo->ai_family, addr, buffer, INET6_ADDRSTRLEN));
 }
 
 /**
@@ -131,13 +134,14 @@ void execCommand(char *line) {
     }
 
     if (strlen(arg2)) {
+
       if (parseFName(arg2) == REG_NOMATCH) {
         fprintf(stderr, MSG_INVALID_FNAME);
         return;
       }
+
       return post(arg1, arg2);
     }
-
     return post(arg1, NULL);
   }
 
@@ -165,7 +169,6 @@ void execCommand(char *line) {
       }
       fprintf(stderr, MSG_UNKNOWN_CMD);
       return;
-
     case 2:
       if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT)) {
         if ((parseGID(arg1)) <= 0) {
@@ -188,7 +191,6 @@ void execCommand(char *line) {
       }
       fprintf(stderr, MSG_UNKNOWN_CMD);
       return;
-
     case 3:
       if (!strcmp(op, CMD_REGISTER)) {
         if ((parseUID(arg1)) == -1) {
@@ -229,7 +231,6 @@ void execCommand(char *line) {
       }
       fprintf(stderr, MSG_UNKNOWN_CMD);
       return;
-
     default: fprintf(stderr, MSG_UNKNOWN_CMD);
   }
 }

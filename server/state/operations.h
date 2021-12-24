@@ -1,5 +1,5 @@
-#ifndef RC_PROJECT_SERVER_COMMANDS_H_
-#define RC_PROJECT_SERVER_COMMANDS_H_
+#ifndef RC_PROJECT_SERVER_STATE_H_
+#define RC_PROJECT_SERVER_STATE_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -56,4 +56,4 @@ extern "C"
 #endif
 void RTV(char *uid, char *gid, char *mid);
 
-#endif //RC_PROJECT_SERVER_COMMANDS_H_
+#endif //RC_PROJECT_SERVER_STATE_H_

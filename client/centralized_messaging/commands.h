@@ -11,7 +11,7 @@ void unregisterUser(char *uid_arg, char *pass_arg);
 void login(char *uid_arg, char *pass_arg);
 void logout();
 void showUID();
-void exitClient(); // TODO should be here?
+void exitClient();
 void groups();
 void subscribe(char *gid_arg, char *gid_name_arg);
 void unsubscribe(char *gid_arg);

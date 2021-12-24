@@ -1,8 +1,9 @@
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <map>
 
-#include "commands.h"
+#include "operations.h"
 
 using namespace std;
 
@@ -18,8 +19,8 @@ class User {
 };
 
 User::User(string id, string password) {
-  _id = id;
-  _password = password;
+  _id = std::move(id);
+  _password = std::move(password);
   _groups = vector<Group>();
 }
 
@@ -30,9 +31,9 @@ class Message {
 };
 
 Message::Message(string id, string text, string author_id) {
-  _id = id;
-  _text = text;
-  _author_id = author_id;
+  _id = std::move(id);
+  _text = std::move(text);
+  _author_id = std::move(author_id);
 }
 
 class Group {
@@ -43,8 +44,8 @@ class Group {
 };
 
 Group::Group(string id, string name) {
-  _id = id;
-  _name = name;
+  _id = std::move(id);
+  _name = std::move(name);
   messages = vector<Message>();
 }
 
