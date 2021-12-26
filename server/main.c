@@ -25,7 +25,8 @@ void signal_handler(int signal_num);
 void loadInitArgs(int argc, char *argv[]);
 void readCommand();
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   signal(SIGTERM, signal_handler);
 
   strcpy(PORT, DEFAULT_PORT);
@@ -39,7 +40,8 @@ int main(int argc, char *argv[]) {
   udpfd = openUDPSocket();
 
   FD_ZERO(&rset);
-  for (;;) {
+  for (;;)
+  {
     readCommand();
   }
 }
@@ -48,7 +50,8 @@ int main(int argc, char *argv[]) {
  * Signal Handler for terminating the server
  * @param signal_num
  */
-void signal_handler(int signal_num) {
+void signal_handler(int signal_num)
+{
   close(listenfd);
   close(udpfd);
   exit(signal_num);
@@ -59,25 +62,34 @@ void signal_handler(int signal_num) {
  * @param argc number of arguments in argv
  * @param argv array passed arguments
  */
-void loadInitArgs(int argc, char *argv[]) {
+void loadInitArgs(int argc, char *argv[])
+{
   int opt;
-  while ((opt = getopt(argc, argv, ":vp:")) != -1) {
-    switch (opt) {
-      case 'p':parsePortArg(optarg);
-        strcpy(PORT, optarg);
-        break;
-      case 'v':VERBOSE = true;
-        break;
-      case ':':fprintf(stderr, "Missing argument for port (-p) option\n");
-        exit(EXIT_FAILURE);
-      case '?':fprintf(stderr, "Unknown option: -%c\n", optopt);
-        exit(EXIT_FAILURE);
-      default:fprintf(stderr, "Unknown error\n");
-        exit(EXIT_FAILURE);
+  while ((opt = getopt(argc, argv, ":vp:")) != -1)
+  {
+    switch (opt)
+    {
+    case 'p':
+      parsePortArg(optarg);
+      strcpy(PORT, optarg);
+      break;
+    case 'v':
+      VERBOSE = true;
+      break;
+    case ':':
+      fprintf(stderr, "Missing argument for port (-p) option\n");
+      exit(EXIT_FAILURE);
+    case '?':
+      fprintf(stderr, "Unknown option: -%c\n", optopt);
+      exit(EXIT_FAILURE);
+    default:
+      fprintf(stderr, "Unknown error\n");
+      exit(EXIT_FAILURE);
     }
   }
 
-  if (optind < argc) {
+  if (optind < argc)
+  {
     fprintf(stderr, "Unnecessary extra argument: %s\n", argv[optind]);
     exit(EXIT_FAILURE);
   }
@@ -86,16 +98,19 @@ void loadInitArgs(int argc, char *argv[]) {
 /**
  * Reads commands from udp and tcp clients
  */
-void readCommand() {
+void readCommand()
+{
   FD_SET(listenfd, &rset);
   FD_SET(udpfd, &rset);
   select(fmax(listenfd, udpfd) + 1, &rset, NULL, NULL, NULL);
 
   struct sockaddr_in cliaddr;
-  if (FD_ISSET(listenfd, &rset)) {
+  if (FD_ISSET(listenfd, &rset))
+  {
     socklen_t len = sizeof(cliaddr);
-    int connfd = accept(listenfd, (struct sockaddr *) &cliaddr, &len);
-    if (fork() == 0) {
+    int connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &len);
+    if (fork() == 0)
+    {
       close(listenfd);
       close(udpfd);
       handleTCPCommand(connfd, VERBOSE);
@@ -106,7 +121,8 @@ void readCommand() {
     close(connfd);
   }
 
-  if (FD_ISSET(udpfd, &rset)) {
+  if (FD_ISSET(udpfd, &rset))
+  {
 
     handleCommandUDP(udpfd, cliaddr, VERBOSE);
   }
