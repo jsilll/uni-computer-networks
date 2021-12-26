@@ -9,7 +9,7 @@
 
 struct addrinfo *address_tcp, *address_udp;
 
-void setupAddresses(char* PORT) {
+void setupAddresses(char *PORT) {
   struct addrinfo hints;
   int errcode;
   memset(&hints, 0, sizeof hints);
@@ -29,27 +29,24 @@ void setupAddresses(char* PORT) {
   }
 }
 
-int openTCPSocket() {
-  /* Create listening TCP socket */
-  int listenfd = socket(AF_INET, SOCK_STREAM, 0);
-  // Binding server addr structure to listenfd
-  if (bind(listenfd, address_tcp->ai_addr, address_tcp->ai_addrlen)== -1) {
-    fprintf(stderr, "Error binding TCP socket\n");
-    exit(EXIT_FAILURE);
+int openSocket(int type) {
+  int fd = socket(AF_INET, type, 0);
+  switch (type) {
+    case SOCK_DGRAM:
+      if (bind(fd, address_udp->ai_addr, address_udp->ai_addrlen) == -1) {
+        fprintf(stderr, "Error binding socket\n");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case SOCK_STREAM:
+      if (bind(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1) {
+        fprintf(stderr, "Error binding socket\n");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    default: fd = -1;
   }
-  listen(listenfd, 5);
-  return listenfd;
-}
-
-int openUDPSocket() {
-  /* Create UDP socket */
-  int udpfd = socket(AF_INET, SOCK_DGRAM, 0);
-  // binding server addr structure to udp sockfd
-  if (bind(udpfd, address_udp->ai_addr, address_udp->ai_addrlen) == -1) {
-    fprintf(stderr, "Error binding UDP socket\n");
-    exit(EXIT_FAILURE);
-  }
-  return udpfd;
+  return fd;
 }
 
 #endif //RC_PROJECT_SERVER_CONNECTION_H_

@@ -6,14 +6,14 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <signal.h>
-#include <math.h>
 
 #include "parsing.h"
 #include "connection.h"
 #include "command_handling.h"
 
 #define DEFAULT_PORT "58006"
-#define MAX_INPUT_SIZE 128
+
+#define max(x, y) (x > y ? x : y)
 
 char PORT[MAX_INPUT_SIZE];
 bool VERBOSE = false;
@@ -36,8 +36,9 @@ int main(int argc, char *argv[])
   printf("PORT: %s VERBOSE: %d\n", PORT, VERBOSE);
 
   setupAddresses(PORT);
-  listenfd = openTCPSocket();
-  udpfd = openUDPSocket();
+  listenfd = openSocket(SOCK_STREAM);
+  listen(listenfd, 5);
+  udpfd = openSocket(SOCK_DGRAM);
 
   FD_ZERO(&rset);
   for (;;)
@@ -102,7 +103,7 @@ void readCommand()
 {
   FD_SET(listenfd, &rset);
   FD_SET(udpfd, &rset);
-  select(fmax(listenfd, udpfd) + 1, &rset, NULL, NULL, NULL);
+  select(max(listenfd, udpfd) + 1, &rset, NULL, NULL, NULL);
 
   struct sockaddr_in cliaddr;
   if (FD_ISSET(listenfd, &rset))

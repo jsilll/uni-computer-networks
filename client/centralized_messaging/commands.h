@@ -12,7 +12,7 @@ void selectGroup(char *gid_arg);
 void showGID();
 
 /* Client Commands */
-void REG(char *uid_arg, char *pass_arg);
+int REG(char *uid_arg, char *pass_arg);
 void UNR(char *uid_arg, char *pass_arg);
 void LOG(char *uid_arg, char *pass_arg);
 void OUT();

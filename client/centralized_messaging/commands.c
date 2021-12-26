@@ -126,14 +126,15 @@ int sendCommandTCP() {
 
 /**
  * @brief Following this command the User application sends a
- * message to the DS server, using the UDP protocol, asking to register a new user,
- * sending its identification UID and a selected password pass.
- * The result of the DS registration request should be displayed.
+ * message to the DS server, using the UDP protocol, asking to
+ * register a new user, sending its identification UID and a
+ * selected password pass. The result of the DS registration request
+ * should be displayed.
  *
- * @param uid_arg
- * @param pass_arg
+ * @param uid
+ * @param pass
  */
-void REG(char *uid_arg, char *pass_arg) {
+int REG(char *uid_arg, char *pass_arg) {
   sprintf(command_buffer, "REG %s %s\n", uid_arg, pass_arg);
   sendCommandUDP();
   printf("%s", response_buffer);
@@ -186,7 +187,11 @@ void OUT() {
  * displays the UID of the user that is logged in.
  */
 void showUID() {
-  printf("(local) showuid\n");
+  if (logged_in) {
+  printf("UID: %s\n", uid);
+  } else {
+    fprintf(stderr, "You are not logged in\n");
+  }
 }
 
 /**

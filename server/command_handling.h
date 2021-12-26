@@ -10,7 +10,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 {
   socklen_t len = sizeof(cliaddr);
   char command_buffer[MAX_INPUT_SIZE];
-  char response_buffer[MAX_INPUT_SIZE];
+  char response_buffer[2806];
   bzero(command_buffer, MAX_INPUT_SIZE);
   recvfrom(udpfd, command_buffer, MAX_INPUT_SIZE, 0, (struct sockaddr *)&cliaddr, &len);
 
@@ -32,9 +32,9 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     {
       strcpy(response_buffer, "RRG NOK\n");
     }
-    else if (REG(arg1, arg2))
+    else if (REG(arg1, arg2) == -1)
     {
-      strcpy(response_buffer, "RRG DUP\n"); // TODO NOK case, too many users registered
+      strcpy(response_buffer, "RRG DUP\n");
     }
     else
     {
@@ -43,41 +43,41 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "UNR"))
   {
-    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH)
+    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH || UNR(arg1, arg2) == -1)
     {
-      strcpy(response_buffer, "RRG NOK\n");
+      strcpy(response_buffer, "RUN NOK\n");
     }
     else
     {
-      UNR(arg1, arg2); // TODO
-      strcpy(response_buffer, "RRG OK\n");
+      strcpy(response_buffer, "RUN OK\n");
     }
   }
   else if (!strcmp(op, "LOG"))
   {
-    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH)
-    { // ROU OK
-      strcpy(response_buffer, "RRG NOK\n");
+    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH || LOG(arg1, arg2) == -1)
+    { // ROU NOK
+      strcpy(response_buffer, "RLO NOK\n");
     }
-    LOG(arg1, arg2); // TODO
-    strcpy(response_buffer, "ROL OK\n");
+    else
+    {
+      strcpy(response_buffer, "RLO OK\n");
+    }
+
   }
   else if (!strcmp(op, "OUT"))
   {
-    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH)
-    { // ROU OK
+    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH || OUT(arg1, arg2) == -1)
+    {
       strcpy(response_buffer, "ROU NOK\n");
     }
     else
     {
-      OUT(arg1, arg2); // TODO
       strcpy(response_buffer, "ROU OK\n");
     }
   }
   else if (!strcmp(op, "GLS"))
   {
-    GLS(); // TODO, tem de retornar char*
-    strcpy(response_buffer, "RGL N[GID GName MID]*\n");
+    GLS(response_buffer);
   }
   else if (!strcmp(op, "GSR"))
   {
