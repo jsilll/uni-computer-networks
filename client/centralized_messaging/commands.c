@@ -11,8 +11,8 @@
 
 #define MAX_INPUT_SIZE 128
 
-bool logged_in = false;
-char *uid, *pass, *gid;
+bool logged_in = false, gid_valid = false;
+char uid[5], pass[8], gid[2];
 
 char command_buffer[MAX_INPUT_SIZE], response_buffer[MAX_INPUT_SIZE];
 struct addrinfo *server_address_udp, *address_tcp; // TODO
@@ -169,6 +169,11 @@ void LOG(char *uid_arg, char *pass_arg) {
   sprintf(command_buffer, "LOG %s %s\n", uid_arg, pass_arg);
   sendCommandUDP();
   printf("%s", response_buffer);
+  if(!strcmp(response_buffer, "RLO OK\n")) {
+    logged_in = true;
+    strcpy(uid, uid_arg);
+    strcpy(pass, pass_arg);
+  }
 }
 
 /**
@@ -178,9 +183,18 @@ void LOG(char *uid_arg, char *pass_arg) {
  *
  */
 void OUT() {
-  sprintf(command_buffer, "OUT %s %s\n", uid, pass);
-  sendCommandUDP();
-  printf("%s", response_buffer);
+  if (logged_in) {
+    sprintf(command_buffer, "OUT %s %s\n", uid, pass);
+    sendCommandUDP();
+    printf("%s", response_buffer);
+    if(!strcmp(response_buffer, "ROU OK\n")) {
+      logged_in = false;
+      strcpy(uid, "");
+      strcpy(pass, "");
+    }
+  } else {
+    fprintf(stderr, "User needs to be logged in\n");
+  }
 }
 /**
  * @brief Following this command the User application locally
