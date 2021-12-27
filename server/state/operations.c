@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "operations.h"
 
@@ -12,6 +13,8 @@ int deleteDir(char *DIRNAME);
 int createFile(char *FILENAME, char *data);
 int checkFileContent(char *FILENAME, char *data);
 int deleteFile(char *FILENAME);
+
+int n_groups = 0;
 
 /**
  * Registers a user on the DS server
@@ -90,7 +93,7 @@ int OUT(char *uid, char *pass) {
   deleteFile(buffer2);
 }
 
-int GLS(char* buffer) {
+int GLS(char *buffer) {
   listGroups(buffer);
 }
 
@@ -103,6 +106,32 @@ int GLS(char* buffer) {
  */
 int GSR(char *uid, char *gid, char *gname) {
 
+  char path_buffer[256];
+
+  if (atoi(gid) > n_groups)
+    return -1; // E_NOK
+
+  if (!strcmp(gid, "0")) {
+    if (n_groups < 99) {
+      n_groups++;
+      sprintf(path_buffer, "GROUPS/%02d", n_groups);
+      createDir(path_buffer);
+      sprintf(path_buffer, "GROUPS/%02d/MSG", n_groups);
+      createDir(path_buffer);
+      sprintf(path_buffer, "GROUPS/%02d/%02d_name.txt", n_groups, n_groups);
+      createFile(path_buffer, gname);
+      sprintf(path_buffer, "GROUPS/%02d/%s.txt", n_groups, uid);
+      createFile(path_buffer, "");
+      return n_groups; // NEW GID
+    } else { return -2; } // E_FULL
+  }
+  sprintf(path_buffer, "GROUPS/%s/%s_name.txt", gid, gid);
+  if (checkFileContent(path_buffer, gname) == -1)
+    return -1;
+
+  sprintf(path_buffer, "GROUPS/%s/%s.txt", gid, uid);
+  createFile(path_buffer, "");
+  return 0; // E_OK
 }
 
 /**
@@ -159,57 +188,59 @@ int RTV(char *uid, char *gid, char *mid) {
 
 }
 
+/**
+ * Lists Groups
+ * @param buffer
+ * @return
+ */
 int listGroups(char *buffer) {
-  char buffer74[1028];
-  buffer74[0] = '\0';
+  char gid[3], name_file[12], gname[25], mid[5], path_buffer[256], group_buffer[32], groups_buffer[3301] = {'\0'};
+  int n_groups2 = 0, n_messages;
+
   struct dirent *de;
   DIR *dr = opendir("/home/joao/Downloads/GROUPS");
-  char gid[3], name_file[12], gname[25];
-  int n_groups = 0, mid = 0;
-  char mid_string[5];
-  while ((de = readdir(dr)) != NULL) { // GRUPO
-    mid = 0;
+  while ((de = readdir(dr)) != NULL) {
     if (de->d_name[0] == '.')
       continue;
-    n_groups++;
+
+    n_groups2++;
     strcpy(gid, de->d_name);
     sprintf(name_file, "%s_name.txt", gid);
-    char buffer0[128];
-    sprintf(buffer0, "/home/joao/Downloads/GROUPS/%s", gid);
+    sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s", gid);
+
+    n_messages = 0;
     struct dirent *de2;
-    DIR *dr2 = opendir(buffer0);
-    while ((de2 = readdir(dr2)) != NULL) { // Dentro grupo
+    DIR *dr2 = opendir(path_buffer);
+    while ((de2 = readdir(dr2)) != NULL) {
       if (de2->d_name[0] == '.')
         continue;
-      else if (!strcmp(de2->d_name, name_file)) {
-        char buffer1[128];
-        sprintf(buffer1, "/home/joao/Downloads/GROUPS/%s/%s", gid, name_file);
-        FILE *fPtr = fopen(buffer1, "r");
+
+      if (!strcmp(de2->d_name, name_file)) {
+        sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s", gid, name_file);
+        FILE *fPtr = fopen(path_buffer, "r");
         fscanf(fPtr, "%24s", gname);
         fclose(fPtr);
       } else if (!strcmp(de2->d_name, "MSG")) {
-        char buffer2[128];
-        sprintf(buffer2, "/home/joao/Downloads/GROUPS/%s/MSG", gid);
-        DIR *dr3 = opendir(buffer2);
-        while ((de = readdir(dr3)) != NULL) { // dentro de MSG
-          if (de->d_name[0] == '.')
+        sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG", gid);
+        struct dirent *de3;
+        DIR *dr3 = opendir(path_buffer);
+        while ((de3 = readdir(dr3)) != NULL) {
+          if (de3->d_name[0] == '.')
             continue;
-          mid++;
+
+          n_messages++;
         }
-        snprintf(mid_string, 5, "%04d", mid);
+        sprintf(mid, "%04d", n_messages);
         closedir(dr3);
       }
     }
-    char buffer44[128];
-    sprintf(buffer44, " %s %s %s", gid, gname, mid_string);
-    strcat(buffer74, buffer44);
+    sprintf(group_buffer, " %s %s %s", gid, gname, mid);
+    strcat(groups_buffer, group_buffer);
     closedir(dr2);
   }
-
-  if (n_groups == 0)
+  if (n_groups2 == 0)
     strcpy(buffer, "RGL 0\n");
-
-  sprintf(buffer, "RGL %d%s\n", n_groups, buffer74);
+  sprintf(buffer, "RGL %d%s\n", n_groups2, groups_buffer);
   closedir(dr);
   return 0;
 }
@@ -267,8 +298,9 @@ int checkFileContent(char *FILENAME, char *data) {
   FILE *fPtr = fopen(pathname, "r");
   if (fPtr == NULL)
     return -1;
-  char file_data[9];
-  fread(file_data, sizeof(char), 8, fPtr);
+  char file_data[25];
+  bzero(file_data, 25);
+  fread(file_data, sizeof(char), 24, fPtr);
   if (strcmp(data, file_data))
     return -1;
   if (fclose(fPtr) == EOF)

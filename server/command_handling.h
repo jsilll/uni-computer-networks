@@ -5,12 +5,14 @@
 #include "state/operations.h"
 
 #define MAX_INPUT_SIZE 1024
+#define MAX_RESPONSE_SIZE 3307
 
 void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 {
   socklen_t len = sizeof(cliaddr);
   char command_buffer[MAX_INPUT_SIZE];
-  char response_buffer[2806];
+  char response_buffer[MAX_RESPONSE_SIZE];
+
   bzero(command_buffer, MAX_INPUT_SIZE);
   recvfrom(udpfd, command_buffer, MAX_INPUT_SIZE, 0, (struct sockaddr *)&cliaddr, &len);
 
@@ -55,7 +57,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   else if (!strcmp(op, "LOG"))
   {
     if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH || LOG(arg1, arg2) == -1)
-    { // ROU NOK
+    {
       strcpy(response_buffer, "RLO NOK\n");
     }
     else
@@ -95,8 +97,21 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     }
     else
     {
-      GSR(arg1, arg2, arg3); // TODO NOK case
-      strcpy(response_buffer, "RGS NEW\n");
+      int res;
+      switch (res = GSR(arg1, arg2, arg3)) {
+        case 0:
+          strcpy(response_buffer, "RGS OK\n");
+          break;
+        case -1:
+          strcpy(response_buffer, "RGS NOK\n");
+          break;
+        case -2:
+          strcpy(response_buffer, "RGS FULL\n");
+          break;
+        default:
+          sprintf(response_buffer, "RGS NEW %02d\n", res);
+          break;
+      }
     }
   }
   else if (!strcmp(op, "GUR"))
@@ -111,7 +126,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     }
     else
     {
-      GUR(arg1, arg2); // TODO NOK CASE
+      GUR(arg1, arg2);
       strcpy(response_buffer, "RGU OK\n");
     }
   }

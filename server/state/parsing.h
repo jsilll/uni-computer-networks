@@ -20,9 +20,9 @@
 int parseGID(char *gid) {
   if (strlen(gid) == 1 && gid[0] == '0')
     return 0;
-  int gid_parsed = strtol(gid, NULL, 10);
+  long gid_parsed = strtol(gid, NULL, 10);
   if (strlen(gid) == 2 && gid_parsed != 0)
-    return gid_parsed;
+    return (int) gid_parsed;
   return -1;
 }
 

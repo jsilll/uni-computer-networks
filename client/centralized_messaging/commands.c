@@ -226,9 +226,13 @@ void GLS() {
  * @param gid_name_arg
  */
 void GSR(char *gid_arg, char *gid_name_arg) {
-  sprintf(command_buffer, "GSR %s %s\n", gid_arg, gid_name_arg);
-  sendCommandUDP();
-  printf("%s", response_buffer);
+  if (logged_in) {
+    sprintf(command_buffer, "GSR %s %s %s\n", uid, gid_arg, gid_name_arg);
+    sendCommandUDP();
+    printf("%s", response_buffer);
+  } else {
+    fprintf(stderr, "User needs to be logged in\n");
+  }
 }
 
 /**
