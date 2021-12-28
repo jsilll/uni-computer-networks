@@ -16,7 +16,10 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   bzero(command_buffer, MAX_INPUT_SIZE);
   recvfrom(udpfd, command_buffer, MAX_INPUT_SIZE, 0, (struct sockaddr *)&cliaddr, &len);
 
-  printf("[UDP] %s", command_buffer);
+  if (verbose)
+  {
+    printf("[UDP] %s", command_buffer);
+  }
 
   char op[MAX_INPUT_SIZE] = {'\0'};
   char arg1[MAX_INPUT_SIZE] = {'\0'};
@@ -132,16 +135,14 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "GLM"))
   {
-    if (parseUID(arg1) == -1)
+    if (parseUID(arg1) == -1 || GLM(arg1, response_buffer) == -1)
     {
       strcpy(response_buffer, "RGM E_USR\n");
     }
-    else
-    {
-      GLM(arg1); // TODO
-      strcpy(response_buffer, "RGM N[ GID GName MID]*\n");
-    }
+  } else {
+    strcpy(response_buffer, "ERR\n");
   }
+
   sendto(udpfd, response_buffer, strlen(response_buffer), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
 }
 
@@ -153,7 +154,10 @@ void handleTCPCommand(int connfd, bool verbose)
   bzero(command_buffer, MAX_INPUT_SIZE);
   read(connfd, command_buffer, MAX_INPUT_SIZE); // TODO varios reads?? ficheiro?
 
-  printf("[TCP] %s", command_buffer);
+  if (verbose)
+  {
+    printf("[TCP] %s", command_buffer);
+  }
 
   // TODO feio? e nao funciona para o ficheiro
   char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE], arg3[MAX_INPUT_SIZE], arg4[MAX_INPUT_SIZE],
@@ -163,14 +167,13 @@ void handleTCPCommand(int connfd, bool verbose)
 
   if (!strcmp(op, "ULS"))
   {
-    if (parseGID(arg1))
+    if (parseGID(arg1) == -1)
     {
-      strcpy(response_buffer, "RGM NOK\n");
+      strcpy(response_buffer, "RUL NOK\n");
     }
     else
     {
-      ULS(arg1); // TODO NOK
-      strcpy(response_buffer, "RGM N[ GID GName MID]*\n");
+      ULS(arg1, response_buffer);
     }
   }
   else if (!strcmp(op, "PST"))
@@ -190,6 +193,8 @@ void handleTCPCommand(int connfd, bool verbose)
       RTV(arg1, arg2, arg3); // TODO
       strcpy(response_buffer, "RRT status [N[ MID UID Tsize text [/ Fname Fsize data]]*]\n");
     }
+  } else {
+    strcpy(response_buffer, "ERR\n");
   }
 
   write(connfd, response_buffer, strlen(response_buffer));

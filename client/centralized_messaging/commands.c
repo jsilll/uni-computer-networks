@@ -11,8 +11,8 @@
 
 #define MAX_INPUT_SIZE 128
 
-bool logged_in = false, gid_valid = false;
-char uid[5], pass[8], gid[2];
+bool logged_in = false;
+char uid[6], pass[9], gid[3];
 
 char command_buffer[MAX_INPUT_SIZE], response_buffer[MAX_INPUT_SIZE];
 struct addrinfo *server_address_udp, *address_tcp; // TODO
