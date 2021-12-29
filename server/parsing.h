@@ -7,11 +7,15 @@
  * Validates the port option argument.
  * @param port port argument in string format
  */
-void parsePortArg(char *port) {
-  for (int i = 0; i < strlen(port); i++) {
-    if (port[i] != '0') {
+void parsePortArg(char *port)
+{
+  for (int i = 0; i < strlen(port); i++)
+  {
+    if (port[i] != '0')
+    {
       long port_parsed = strtol(port, NULL, 10);
-      if (port_parsed <= 0 || port_parsed > 65535) {
+      if (port_parsed <= 0 || port_parsed > 65535)
+      {
         fprintf(stderr, "Invalid port argument\n");
         exit(EXIT_FAILURE);
       }

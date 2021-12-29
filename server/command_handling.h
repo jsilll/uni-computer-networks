@@ -67,7 +67,6 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     {
       strcpy(response_buffer, "RLO OK\n");
     }
-
   }
   else if (!strcmp(op, "OUT"))
   {
@@ -101,19 +100,20 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     else
     {
       int res;
-      switch (res = GSR(arg1, arg2, arg3)) {
-        case 0:
-          strcpy(response_buffer, "RGS OK\n");
-          break;
-        case -1:
-          strcpy(response_buffer, "RGS NOK\n");
-          break;
-        case -2:
-          strcpy(response_buffer, "RGS FULL\n");
-          break;
-        default:
-          sprintf(response_buffer, "RGS NEW %02d\n", res);
-          break;
+      switch (res = GSR(arg1, arg2, arg3))
+      {
+      case 0:
+        strcpy(response_buffer, "RGS OK\n");
+        break;
+      case -1:
+        strcpy(response_buffer, "RGS NOK\n");
+        break;
+      case -2:
+        strcpy(response_buffer, "RGS FULL\n");
+        break;
+      default:
+        sprintf(response_buffer, "RGS NEW %02d\n", res);
+        break;
       }
     }
   }
@@ -127,9 +127,12 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     {
       strcpy(response_buffer, "RGU E_GRP\n");
     }
+    else if (GUR(arg1, arg2) == -1)
+    {
+      strcpy(response_buffer, "RGU NOK\n");
+    }
     else
     {
-      GUR(arg1, arg2);
       strcpy(response_buffer, "RGU OK\n");
     }
   }
@@ -139,7 +142,9 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     {
       strcpy(response_buffer, "RGM E_USR\n");
     }
-  } else {
+  }
+  else
+  {
     strcpy(response_buffer, "ERR\n");
   }
 
@@ -154,16 +159,26 @@ void handleTCPCommand(int connfd, bool verbose)
   bzero(command_buffer, MAX_INPUT_SIZE);
   read(connfd, command_buffer, MAX_INPUT_SIZE); // TODO varios reads?? ficheiro?
 
+  // TODO feio? e nao funciona para o ficheiro
+  // while (strtok(command_buffer, ' ') != NULL)) {
+
+  // }
+
+  char op[MAX_INPUT_SIZE] = {'\0'};
+  char arg1[MAX_INPUT_SIZE] = {'\0'};
+  char arg2[MAX_INPUT_SIZE] = {'\0'};
+  char arg3[MAX_INPUT_SIZE] = {'\0'};
+  char arg4[MAX_INPUT_SIZE] = {'\0'};
+  char arg5[MAX_INPUT_SIZE] = {'\0'};
+  char arg6[MAX_INPUT_SIZE] = {'\0'};
+  int numTokens = sscanf(command_buffer, "%s %s %s %s %s %s %s", op, arg1, arg2, arg3, arg4, arg5, arg6);
+  int index = strlen(op) + strlen(arg1) + strlen(arg2) + strlen(arg3) + strlen(arg4) + strlen(arg5) + strlen(arg6) + 7;
+  char *arg7 = &command_buffer[index];
+
   if (verbose)
   {
-    printf("[TCP] %s", command_buffer);
+    printf("[TCP] %s %s %s %s %s %s %s\n", op, arg1, arg2, arg3, arg4, arg5, arg6);
   }
-
-  // TODO feio? e nao funciona para o ficheiro
-  char op[MAX_INPUT_SIZE], arg1[MAX_INPUT_SIZE], arg2[MAX_INPUT_SIZE], arg3[MAX_INPUT_SIZE], arg4[MAX_INPUT_SIZE],
-      arg5[MAX_INPUT_SIZE], arg6[MAX_INPUT_SIZE],
-      arg7[MAX_INPUT_SIZE];
-  int numTokens = sscanf(command_buffer, "%s %s %s %s %s %s %s %s", op, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 
   if (!strcmp(op, "ULS"))
   {
@@ -178,9 +193,55 @@ void handleTCPCommand(int connfd, bool verbose)
   }
   else if (!strcmp(op, "PST"))
   {
-    // TODO usar numTokens
-    // UID GID Tsize text [Fname Fsize data]
-    PST(arg1, arg2, atoi(arg3), arg4, arg5, atoi(arg6), arg7);
+    if (parseUID(arg1) == -1 || (parseGID(arg2) == -1) || parseMessageText(arg4, arg3) == -1)
+    {
+      strcpy(response_buffer, "RPT NOK\n");
+    }
+    if (numTokens == 5)
+    {
+      int n_msg = PST(arg1, arg2, atoi(arg3), arg4, NULL, 0, NULL);
+      if (n_msg == -1)
+      {
+        strcpy(response_buffer, "RPT NOK\n");
+      }
+      else
+      {
+        char mid[5];
+        sprintf(mid, "%04d", n_msg);
+        sprintf(response_buffer, "RPT %s\n", mid);
+      }
+    }
+    else
+    {
+      if (parseFileSize(arg6) == -1 || parseFName(arg5) == -1)
+      {
+        strcpy(response_buffer, "RPT NOK\n");
+      }
+      else
+      {
+        int size_read = strlen(arg7);
+        int n_msg = PST(arg1, arg2, atoi(arg3), arg4, arg5, atoi(arg6), arg7);
+        char mid[5];
+        sprintf(mid, "%04d", n_msg);
+        if (n_msg == -1)
+        {
+          strcpy(response_buffer, "RPT NOK\n");
+        }
+        else
+        {
+          int n, fsize = atoi(arg6);
+          char data[1024];
+          bzero(data, 1024);
+          while (size_read < fsize && (n = read(connfd, data, 1024)) > 0)
+          {
+            size_read += n;
+            PSTAux(arg2, mid, arg5, data);
+            bzero(data, 1024);
+          }
+          sprintf(response_buffer, "RPT %s\n", mid);
+        }
+      }
+    }
   }
   else if (!strcmp(op, "RTV"))
   {
@@ -193,7 +254,9 @@ void handleTCPCommand(int connfd, bool verbose)
       RTV(arg1, arg2, arg3); // TODO
       strcpy(response_buffer, "RRT status [N[ MID UID Tsize text [/ Fname Fsize data]]*]\n");
     }
-  } else {
+  }
+  else
+  {
     strcpy(response_buffer, "ERR\n");
   }
 

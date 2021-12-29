@@ -22,7 +22,8 @@ void setDefaultAddress();
 void loadInitArgs(int argc, char *argv[]);
 void execCommand(char *line);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   signal(SIGTERM, signalHandler);
   strcpy(PORT, DEFAULT_PORT);
   setDefaultAddress();
@@ -39,7 +40,8 @@ int main(int argc, char *argv[]) {
  * Signal Handler for terminating the client
  * @param signum
  */
-void signalHandler(int signum) {
+void signalHandler(int signum)
+{
   // TODO close all TCP connections
   freeServerAddress();
   exit(signum);
@@ -48,7 +50,8 @@ void signalHandler(int signum) {
 /**
  * @brief Gets the local machine's ADDRESS
  */
-void setDefaultAddress() {
+void setDefaultAddress()
+{
   struct addrinfo hints;
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;
@@ -56,20 +59,22 @@ void setDefaultAddress() {
   hints.ai_flags = AI_CANONNAME;
 
   char hostname_buf[128];
-  if (gethostname(hostname_buf, 128) == -1) {
+  if (gethostname(hostname_buf, 128) == -1)
+  {
     fprintf(stderr, "error: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
 
   int errcode;
   struct addrinfo *host_addrinfo;
-  if ((errcode = getaddrinfo(hostname_buf, NULL, &hints, &host_addrinfo))) {
+  if ((errcode = getaddrinfo(hostname_buf, NULL, &hints, &host_addrinfo)))
+  {
     fprintf(stderr, "error: getaddrinfo: %s\n", gai_strerror(errcode));
     exit(EXIT_FAILURE);
   }
 
   char buffer[INET_ADDRSTRLEN];
-  struct in_addr *addr = &((struct sockaddr_in *) host_addrinfo->ai_addr)->sin_addr;
+  struct in_addr *addr = &((struct sockaddr_in *)host_addrinfo->ai_addr)->sin_addr;
   strcpy(ADDRESS, inet_ntop(host_addrinfo->ai_family, addr, buffer, INET6_ADDRSTRLEN));
 }
 
@@ -80,26 +85,35 @@ void setDefaultAddress() {
  * @param argc number of arguments in argv
  * @param argv array passed arguments
  */
-void loadInitArgs(int argc, char *argv[]) {
+void loadInitArgs(int argc, char *argv[])
+{
   int opt;
-  while ((opt = getopt(argc, argv, ":n:p:")) != -1) {
-    switch (opt) {
-      case 'n': parseIPArg(optarg);
-        strcpy(ADDRESS, optarg);
-        break;
-      case 'p': parsePortArg(optarg);
-        strcpy(PORT, optarg);
-        break;
-      case ':': fprintf(stderr, "Missing value for ip (-n) or for port (-p) option\n");
-        exit(EXIT_FAILURE);
-      case '?': fprintf(stderr, "Unknown option: -%c\n", optopt);
-        exit(EXIT_FAILURE);
-      default: fprintf(stderr, "Unknown error\n");
-        exit(EXIT_FAILURE);
+  while ((opt = getopt(argc, argv, ":n:p:")) != -1)
+  {
+    switch (opt)
+    {
+    case 'n':
+      parseIPArg(optarg);
+      strcpy(ADDRESS, optarg);
+      break;
+    case 'p':
+      parsePortArg(optarg);
+      strcpy(PORT, optarg);
+      break;
+    case ':':
+      fprintf(stderr, "Missing value for ip (-n) or for port (-p) option\n");
+      exit(EXIT_FAILURE);
+    case '?':
+      fprintf(stderr, "Unknown option: -%c\n", optopt);
+      exit(EXIT_FAILURE);
+    default:
+      fprintf(stderr, "Unknown error\n");
+      exit(EXIT_FAILURE);
     }
   }
 
-  if (optind < argc) {
+  if (optind < argc)
+  {
     fprintf(stderr, "Unnecessary extra argument: %s\n", argv[optind]);
     exit(EXIT_FAILURE);
   }
@@ -110,7 +124,8 @@ void loadInitArgs(int argc, char *argv[]) {
  *
  * @param line string that represents a command
  */
-void execCommand(char *line) {
+void execCommand(char *line)
+{
   char op[MAX_INPUT_SIZE] = {'\0'};
   char arg1[MAX_INPUT_SIZE] = {'\0'};
   char arg2[MAX_INPUT_SIZE] = {'\0'};
@@ -118,72 +133,72 @@ void execCommand(char *line) {
 
   int numTokens = sscanf(line, "%s %s %s %s", op, arg1, arg2, arg3);
 
-  if (!strcmp(op, CMD_POST)) {
-    op[0] = arg1[0] = arg2[0] = '\0';
+  if (!strcmp(op, CMD_POST))
+  {
+    arg2[0] = '\0';
     numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
-    if (numTokens < 2) {
+    if (numTokens < 2)
       fprintf(stderr, MSG_INVALID_POST_CMD);
-    } else if ((!strlen(arg2) && line[strlen(line) - 2] != '"')) {
+    else if ((!strlen(arg2) && line[strlen(line) - 2] != '"'))
       fprintf(stderr, MSG_INVALID_POST_CMD);
-    } else if (strlen(arg2)) {
+    else if (strlen(arg2))
       PST(arg1, arg2);
-    } else {
+    else
       PST(arg1, NULL);
-    }
   }
-
-  if (numTokens == 4) {
+  else if (numTokens == 4)
+  {
     fprintf(stderr, MSG_UNKNOWN_CMD);
-    return;
   }
-
-  switch (numTokens) {
+  else
+  {
+    switch (numTokens)
+    {
     case 1:
-      if (!strcmp(op, CMD_LOGOUT)) {
+      if (!strcmp(op, CMD_LOGOUT))
         OUT();
-      } else if (!strcmp(op, CMD_EXIT)) {
+      else if (!strcmp(op, CMD_EXIT))
         exitClient();
-      } else if (!strcmp(op, CMD_GROUPS) || !strcmp(op, CMD_GROUPS_SHORT)) {
+      else if (!strcmp(op, CMD_GROUPS) || !strcmp(op, CMD_GROUPS_SHORT))
         GLS();
-      } else if (!strcmp(op, CMD_MY_GROUPS) || !strcmp(op, CMD_MY_GROUPS_SHORT)) {
+      else if (!strcmp(op, CMD_MY_GROUPS) || !strcmp(op, CMD_MY_GROUPS_SHORT))
         GLM();
-      } else if (!strcmp(op, CMD_ULIST) || !strcmp(op, CMD_ULIST_SHORT)) {
+      else if (!strcmp(op, CMD_ULIST) || !strcmp(op, CMD_ULIST_SHORT))
         ULS();
-      } else if (!strcmp(op, CMD_SHOW_UID) || !strcmp(op, CMD_SHOW_UID_SHORT)) {
+      else if (!strcmp(op, CMD_SHOW_UID) || !strcmp(op, CMD_SHOW_UID_SHORT))
         showUID();
-      } else if (!strcmp(op, CMD_SHOW_GID) || !strcmp(op, CMD_SHOW_GID_SHORT)) {
+      else if (!strcmp(op, CMD_SHOW_GID) || !strcmp(op, CMD_SHOW_GID_SHORT))
         showGID();
-      } else {
+      else
         fprintf(stderr, MSG_UNKNOWN_CMD);
-      }
       return;
 
     case 2:
-      if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT)) {
+      if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT))
         GUR(arg1);
-      } else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT)) {
+      else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT))
         selectGroup(arg1);
-      } else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT)) {
+      else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
         RTV(arg1);
-      } else {
+      else
         fprintf(stderr, MSG_UNKNOWN_CMD);
-      }
       return;
 
     case 3:
-      if (!strcmp(op, CMD_REGISTER)) {
+      if (!strcmp(op, CMD_REGISTER))
         REG(arg1, arg2);
-      } else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT)) {
+      else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
         UNR(arg1, arg2);
-      } else if (!strcmp(op, CMD_LOGIN)) {
+      else if (!strcmp(op, CMD_LOGIN))
         LOG(arg1, arg2);
-      } else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT)) {
+      else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT))
         GSR(arg1, arg2);
-      } else {
+      else
         fprintf(stderr, MSG_UNKNOWN_CMD);
-      }
       return;
 
-    default: fprintf(stderr, MSG_UNKNOWN_CMD);
+    default:
+      fprintf(stderr, MSG_UNKNOWN_CMD);
+    }
   }
 }

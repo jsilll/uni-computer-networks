@@ -1,6 +1,3 @@
-#ifndef RC_PROJECT_SERVER_COMMAND_ARG_PARSING_H_
-#define RC_PROJECT_SERVER_COMMAND_ARG_PARSING_H_
-
 #ifndef CENTRALIZED_MESSAGING_PARSING_H
 #define CENTRALIZED_MESSAGING_PARSING_H
 
@@ -17,12 +14,13 @@
  * @param gid string that represents a group ID
  * @return int
  */
-int parseGID(char *gid) {
+int parseGID(char *gid)
+{
   if (strlen(gid) == 1 && gid[0] == '0')
     return 0;
   long gid_parsed = strtol(gid, NULL, 10);
   if (strlen(gid) == 2 && gid_parsed != 0)
-    return (int) gid_parsed;
+    return (int)gid_parsed;
   return -1;
 }
 
@@ -33,7 +31,8 @@ int parseGID(char *gid) {
  * @param uid string that represents a user ID
  * @return int
  */
-int parseUID(char *uid) {
+int parseUID(char *uid)
+{
   if (strlen(uid) != 5)
     return -1;
   int uid_parsed = strtol(uid, NULL, 10);
@@ -50,7 +49,8 @@ int parseUID(char *uid) {
  * @param password string that represents a password
  * @return int
  */
-int parsePassword(char *password) {
+int parsePassword(char *password)
+{
   regex_t re; // TODO: make this const
   if (regcomp(&re, "^[a-zA-Z0-9]{8}$", REG_EXTENDED | REG_NOSUB) != 0)
     return REG_NOMATCH;
@@ -67,7 +67,8 @@ int parsePassword(char *password) {
  * @param gname string that represents a group name
  * @return int
  */
-int parseGName(char *gname) {
+int parseGName(char *gname)
+{
   regex_t re; // TODO: make this const
   if (regcomp(&re, "^[a-zA-Z0-9_-]{1,24}$", REG_EXTENDED | REG_NOSUB) != 0)
     return REG_NOMATCH;
@@ -83,7 +84,8 @@ int parseGName(char *gname) {
  * @param mid string that represents a message ID
  * @return int
  */
-int parseMID(char *mid) {
+int parseMID(char *mid)
+{
   if (strlen(mid) != 4)
     return 0;
   return strtol(mid, NULL, 10);
@@ -96,9 +98,23 @@ int parseMID(char *mid) {
  * @param message string that represents a message text
  * @return int
  */
-int parseMessageText(char *message) {
+int parseMessageText(char *message, char *text_size)
+{
   int len = strlen(message);
-  if (len > (T_SIZE))
+  if (len > T_SIZE || len == 0) // || atoi(text_size) > len || atoi(text_size) + 1 < len) // TODO
+    return -1;
+  return 0;
+}
+
+/**
+ * @brief Parses the file size
+ * 
+ * @param size 
+ * @return int 
+ */
+int parseFileSize(char *size)
+{
+  if (strlen(size) > 10)
     return -1;
   return 0;
 }
@@ -112,16 +128,18 @@ int parseMessageText(char *message) {
  * @param fname string that represents a filename
  * @return int
  */
-int parseFName(char *fname) {
+int parseFName(char *fname)
+{
   regex_t re; // TODO: make this const
   if (strlen(fname) > 24 || regcomp(&re, "^[a-zA-Z0-9_.-]+[.]{1}[A-Za-z]{3}$", REG_EXTENDED | REG_NOSUB) != 0)
-    return REG_NOMATCH;
-  int res = regexec(&re, fname, 0, NULL, 0);
+    return -1;
+  if (regexec(&re, fname, 0, NULL, 0) != 0)
+  {
+    regfree(&re);
+    return -1;
+  }
   regfree(&re);
-  return res;
+  return 0;
 }
 
 #endif //CENTRALIZED_MESSAGING_PARSING_H
-
-
-#endif //RC_PROJECT_SERVER_COMMAND_ARG_PARSING_H_
