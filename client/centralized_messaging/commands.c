@@ -398,7 +398,7 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
   {
     if (fname != NULL)
     {
-      FILE *FPtr = fopen(fname, "r");
+      FILE *FPtr = fopen(fname, "rb");
       fseek(FPtr, 0L, SEEK_END);
       long size = ftell(FPtr);
       rewind(FPtr);
@@ -427,9 +427,10 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
       int n;
       char data[1024];
       bzero(data, 1024);
-      while (fread(data, sizeof(char), 1024, FPtr) != NULL)
+      int bytes_read;
+      while ((bytes_read = fread(data, 1, 1024, FPtr)) > 0)
       {
-        if (write(fd, data, strlen(data)) == -1)
+        if (write(fd, data, bytes_read) == -1)
         {
           close(fd);
           fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");

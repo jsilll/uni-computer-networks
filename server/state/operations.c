@@ -236,7 +236,7 @@ int ULS(char *gid, char *buffer)
  * @param data
  * @return
  */
-int PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, char *data)
+int PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, char *data, int size_read)
 {
   char path_buffer[256];
 
@@ -267,7 +267,7 @@ int PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, cha
 
   if (fname != NULL)
   {
-    PSTAux(gid, mid, fname, data);
+    PSTAux(gid, mid, fname, data, size_read);
   }
 
   return atoi(mid);
@@ -280,13 +280,14 @@ int PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, cha
  * @param mid 
  * @param data 
  */
-void PSTAux(char *gid, char *mid, char *fname, char *data)
+void PSTAux(char *gid, char *mid, char *fname, char *data, int size_read)
 {
   char path_buffer[256];
   //printf("%s %s %s %s\n", gid, mid, fname, data);
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid, fname);
-  FILE *FPtr = fopen(path_buffer, "a");
-  fputs(data, FPtr);
+  FILE *FPtr = fopen(path_buffer, "ab");
+  fwrite(data, 1, size_read, FPtr);
+  // fputs(data, FPtr);
   fclose(FPtr);
 }
 

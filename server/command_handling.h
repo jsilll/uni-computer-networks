@@ -199,7 +199,7 @@ void handleTCPCommand(int connfd, bool verbose)
     }
     if (numTokens == 5)
     {
-      int n_msg = PST(arg1, arg2, atoi(arg3), arg4, NULL, 0, NULL);
+      int n_msg = PST(arg1, arg2, atoi(arg3), arg4, NULL, 0, NULL, 0);
       if (n_msg == -1)
       {
         strcpy(response_buffer, "RPT NOK\n");
@@ -219,8 +219,8 @@ void handleTCPCommand(int connfd, bool verbose)
       }
       else
       {
-        int size_read = strlen(arg7);
-        int n_msg = PST(arg1, arg2, atoi(arg3), arg4, arg5, atoi(arg6), arg7);
+        int size_read = MAX_INPUT_SIZE - index;
+        int n_msg = PST(arg1, arg2, atoi(arg3), arg4, arg5, atoi(arg6), arg7, size_read);
         char mid[5];
         sprintf(mid, "%04d", n_msg);
         if (n_msg == -1)
@@ -232,10 +232,10 @@ void handleTCPCommand(int connfd, bool verbose)
           int n, fsize = atoi(arg6);
           char data[1024];
           bzero(data, 1024);
-          while (size_read < fsize && (n = read(connfd, data, 1024)) > 0)
+          while ((size_read < fsize) && (n = read(connfd, data, sizeof(data))) > 0)
           {
             size_read += n;
-            PSTAux(arg2, mid, arg5, data);
+            PSTAux(arg2, mid, arg5, data, n);
             bzero(data, 1024);
           }
           sprintf(response_buffer, "RPT %s\n", mid);
