@@ -236,19 +236,17 @@ int ULS(char *gid, char *buffer)
  * @param data
  * @return
  */
-int PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, char *data, int size_read)
+FILE *PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, char *data, int size_read, char *mid)
 {
   char path_buffer[256];
 
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s.txt", gid, uid);
   if (n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
   {
-    return -1; // NOK
+    return NULL; // NOK
   }
 
-  char mid[5];
   bzero(mid, 5);
-
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/num_msg.txt", gid);
   FILE *FPtr = fopen(path_buffer, "r+");
   fread(mid, sizeof(char), 4, FPtr);
@@ -267,28 +265,14 @@ int PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, cha
 
   if (fname != NULL)
   {
-    PSTAux(gid, mid, fname, data, size_read);
+    sprintf(path_buffer, "GROUPS/%s/MSG/%s/F I L E.txt", gid, mid);
+    createFile(path_buffer, fname);
+    sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid, fname);
+    FPtr = fopen(path_buffer, "wb");
+    WriteFile(FPtr, data, size_read);
   }
 
-  return atoi(mid);
-}
-
-/**
- * @brief 
- * 
- * @param gid 
- * @param mid 
- * @param data 
- */
-void PSTAux(char *gid, char *mid, char *fname, char *data, int size_read)
-{
-  char path_buffer[256];
-  //printf("%s %s %s %s\n", gid, mid, fname, data);
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid, fname);
-  FILE *FPtr = fopen(path_buffer, "ab");
-  fwrite(data, 1, size_read, FPtr);
-  // fputs(data, FPtr);
-  fclose(FPtr);
+  return FPtr;
 }
 
 /**
@@ -300,6 +284,106 @@ void PSTAux(char *gid, char *mid, char *fname, char *data, int size_read)
  */
 int RTV(char *uid, char *gid, char *mid)
 {
+  char path_buffer[256];
+  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s.txt", gid, uid);
+  if (n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
+  {
+    return -1;
+  }
+
+  char n_msg[5];
+  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/num_msg.txt", gid);
+  FILE *FPtr = fopen(path_buffer, "r");
+  fread(n_msg, sizeof(char), 5, FPtr);
+  fclose(FPtr);
+
+  if (atoi(n_msg) == 0)
+  {
+    return 0;
+  }
+  else if (atoi(n_msg) < atoi(mid))
+  {
+    return -1;
+  }
+
+  int to_read = atoi(n_msg) - atoi(mid) + 1;
+  if (to_read > 20)
+  {
+    return 20;
+  }
+
+  return to_read;
+}
+
+FILE *RTVAux(char *gid, int mid, char *buffer)
+{
+  char mid_aux[5];
+  sprintf(mid_aux, "%04d", mid); // MID
+
+  char path_buffer[256];
+  FILE *FPtr;
+  char text[240];
+  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/T E X T.txt", gid, mid_aux);
+  FPtr = fopen(path_buffer, "r");
+  fread(text, sizeof(char), 240, FPtr); // TEXT
+  fclose(FPtr);
+  int len = strlen(text); // TSize
+
+  char uid[6];
+  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/A U T H O R.txt", gid, mid_aux);
+  FPtr = fopen(path_buffer, "r");
+  fread(uid, sizeof(char), 5, FPtr); // UID
+  fclose(FPtr);
+
+  char file_name_buffer[25];
+  bzero(file_name_buffer, 25);
+  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/F I L E.txt", gid, mid_aux);
+  FPtr = fopen(path_buffer, "r");
+  fread(file_name_buffer, sizeof(char), 24, FPtr); // fname
+  fclose(FPtr);
+
+  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid_aux, file_name_buffer);
+  if ((FPtr = fopen(path_buffer, "rb")) != NULL)
+  {
+    printf("fseek");
+    fseek(FPtr, 0L, SEEK_END);
+    long size = ftell(FPtr);
+    rewind(FPtr);
+    sprintf(buffer, " %s %s %s %s %s %lu ", mid_aux, uid, len, text, file_name_buffer, size);
+  }
+  else
+  {
+    sprintf(buffer, " %s %s %s %s", mid_aux, uid, len, text);
+  }
+
+  printf("Acaba o RTVAux\n");
+  fflush(stdout);
+
+  return FPtr;
+}
+
+/**
+ * @brief 
+ * 
+ * @param gid 
+ * @param mid 
+ * @param data 
+ */
+int ReadFile(FILE *FPtr, char *data, int size_read)
+{
+  return fread(data, sizeof(char), size_read, FPtr);
+}
+
+/**
+ * @brief 
+ * 
+ * @param gid 
+ * @param mid 
+ * @param data 
+ */
+void WriteFile(FILE *FPtr, char *data, int size_read)
+{
+  fwrite(data, sizeof(char), size_read, FPtr);
 }
 
 /**

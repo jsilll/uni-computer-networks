@@ -410,18 +410,21 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
       if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
       {
         fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
+        return;
       }
 
       if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
       {
         close(fd);
         fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
+        return;
       }
 
       if (write(fd, command_buffer, strlen(command_buffer)) == -1)
       {
         close(fd);
         fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+        return;
       }
 
       int n;
@@ -434,15 +437,16 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
         {
           close(fd);
           fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+          return;
         }
         bzero(data, 1024);
       }
       fclose(FPtr);
-
       if (read(fd, response_buffer, MAX_INPUT_SIZE) == -1)
       {
         close(fd);
         fprintf(stderr, "Error receiving server's response.\n");
+        return;
       }
       close(fd);
       printf("%s", response_buffer);
@@ -476,6 +480,38 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
 void RTV(char *mid)
 {
   sprintf(command_buffer, "RTV %s %s %s\n", uid, gid, mid);
-  sendCommandTCP();
-  printf("%s", response_buffer);
+
+  int fd;
+
+  bzero(response_buffer, MAX_INPUT_SIZE);
+  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  {
+    fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
+    return;
+  }
+
+  if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
+  {
+    close(fd);
+    fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
+    return;
+  }
+
+  if (write(fd, command_buffer, strlen(command_buffer)) == -1)
+  {
+    close(fd);
+    fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+    return;
+  }
+
+  int n;
+  char data[1024];
+  bzero(data, 1024);
+  while ((n = read(fd, data, sizeof(data))) > 0)
+  {
+    printf("%s", data);
+    bzero(data, 1024);
+  }
+
+  close(fd);
 }

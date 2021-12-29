@@ -86,9 +86,9 @@ int parseGName(char *gname)
  */
 int parseMID(char *mid)
 {
-  if (strlen(mid) != 4)
-    return 0;
-  return strtol(mid, NULL, 10);
+  if (strlen(mid) != 4 || strtol(mid, NULL, 10) <= 0)
+    return -1;
+  return 0;
 }
 
 /**
