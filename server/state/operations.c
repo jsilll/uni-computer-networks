@@ -345,19 +345,15 @@ FILE *RTVAux(char *gid, int mid, char *buffer)
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid_aux, file_name_buffer);
   if ((FPtr = fopen(path_buffer, "rb")) != NULL)
   {
-    printf("fseek");
     fseek(FPtr, 0L, SEEK_END);
     long size = ftell(FPtr);
     rewind(FPtr);
-    sprintf(buffer, " %s %s %s %s %s %lu ", mid_aux, uid, len, text, file_name_buffer, size);
+    sprintf(buffer, " %s %s %d %s %s %lu ", mid_aux, uid, len, text, file_name_buffer, size);
   }
   else
   {
     sprintf(buffer, " %s %s %s %s", mid_aux, uid, len, text);
   }
-
-  printf("Acaba o RTVAux\n");
-  fflush(stdout);
 
   return FPtr;
 }

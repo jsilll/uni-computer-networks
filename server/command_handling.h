@@ -263,7 +263,6 @@ void handleTCPCommand(int connfd, bool verbose)
       {
         bzero(response_buffer, MAX_INPUT_SIZE);
         FILE *FPtr = RTVAux(arg2, base_msg + i, response_buffer);
-        printf("Response buffer %s\n", response_buffer);
         write(connfd, response_buffer, strlen(response_buffer));
         if (FPtr != NULL)
         {
@@ -271,7 +270,6 @@ void handleTCPCommand(int connfd, bool verbose)
           int bytes_read;
           while ((bytes_read = ReadFile(FPtr, data, 1024)) > 0)
           {
-            printf("%s", data);
             if (write(connfd, data, bytes_read) == -1)
             {
               close(connfd);
