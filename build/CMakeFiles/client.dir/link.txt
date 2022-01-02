@@ -1,0 +1,1 @@
+/usr/bin/x86_64-pc-linux-gnu-gcc-11.1.0 -g CMakeFiles/client.dir/client/main.c.o CMakeFiles/client.dir/client/centralized_messaging/commands.c.o -o client 

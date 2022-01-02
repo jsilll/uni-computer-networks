@@ -1,0 +1,4 @@
+/home/joao/Documents/ist/RC/rc-project/build/CMakeFiles/client.dir
+/home/joao/Documents/ist/RC/rc-project/build/CMakeFiles/server.dir
+/home/joao/Documents/ist/RC/rc-project/build/CMakeFiles/edit_cache.dir
+/home/joao/Documents/ist/RC/rc-project/build/CMakeFiles/rebuild_cache.dir
