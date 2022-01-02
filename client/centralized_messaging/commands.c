@@ -400,6 +400,12 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
         if (fname != NULL)
         {
             FILE *FPtr = fopen(fname, "rb");
+            if (FPtr == NULL)
+            {
+                fprintf(stderr, "Couldn't open file. File does not exist\n");
+                return;
+            }
+
             fseek(FPtr, 0L, SEEK_END);
             long size = ftell(FPtr);
             rewind(FPtr);
