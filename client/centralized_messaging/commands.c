@@ -10,6 +10,7 @@
 
 #include "commands.h"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX_INPUT_SIZE 128
 
 bool logged_in = false;
@@ -516,8 +517,9 @@ void RTV(char *mid)
         char op[4], status[4];
         sscanf(response_buffer, "%s %s", op, status);
 
-        if (!strcmp(status, 'OK'))
+        if (!strcmp(status, "OK"))
         {
+            printf("%s %s\n", op, status);
             char data[1024];
             bzero(data, 1024);
 
@@ -542,6 +544,7 @@ void RTV(char *mid)
                 bzero(data, 1024);
                 fgetc(TempFile);
                 fread(data, sizeof(char), atoi(tsize), TempFile);
+                printf("%s", data);
                 fwrite(data, sizeof(char), atoi(tsize), MessageFile);
                 fclose(MessageFile);
 
@@ -552,13 +555,29 @@ void RTV(char *mid)
                     char fname[25], fsize[11];
                     fgetc(TempFile);
                     fscanf(TempFile, "%s %s", fname, fsize);
+                    printf(" %s", fname);
+                    fgetc(TempFile);
+                    FILE *DataFile = fopen(fname, "wb");
+                    int iter = atoi(fsize);
+
+                    for (int j = 0; j < iter; j += 1024)
+                    {
+                        size_t size = fread(data, sizeof(char), min(1024, iter - j), TempFile);
+                        fwrite(data, sizeof(char), size, DataFile);
+                    }
+                    fclose(DataFile);
                 }
                 else
                 {
                     fseek(TempFile, -1L, SEEK_CUR);
                 }
+
+                printf("\n");
                 bzero(data, 1024);
             }
+
+            fclose(TempFile);
+            unlink("temp.bin");
         }
         else
         {
