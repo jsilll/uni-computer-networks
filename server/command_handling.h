@@ -232,6 +232,7 @@ void handleTCPCommand(int connfd, bool verbose)
           bzero(data, 1024);
           while ((size_read < fsize) && (n = read(connfd, data, sizeof(data))) > 0)
           {
+            printf("fsize: %d size_read: %d\n", fsize, size_read);
             size_read += n;
             WriteFile(FPtr, data, n);
             bzero(data, 1024);

@@ -323,6 +323,7 @@ FILE *RTVAux(char *gid, int mid, char *buffer)
   char path_buffer[256];
   FILE *FPtr;
   char text[240];
+  bzero(text, 240);
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/T E X T.txt", gid, mid_aux);
   FPtr = fopen(path_buffer, "r");
   fread(text, sizeof(char), 240, FPtr); // TEXT
@@ -348,11 +349,11 @@ FILE *RTVAux(char *gid, int mid, char *buffer)
     fseek(FPtr, 0L, SEEK_END);
     long size = ftell(FPtr);
     rewind(FPtr);
-    sprintf(buffer, " %s %s %d %s %s %lu ", mid_aux, uid, len, text, file_name_buffer, size);
+    sprintf(buffer, " %s %s %d %s %c %s %lu ", mid_aux, uid, len, text, '/', file_name_buffer, size);
   }
   else
   {
-    sprintf(buffer, " %s %s %s %s", mid_aux, uid, len, text);
+    sprintf(buffer, " %s %s %d %s", mid_aux, uid, len, text);
   }
 
   return FPtr;
