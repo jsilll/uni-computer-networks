@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 #include <libgen.h>
+#include <errno.h>
 
 #include "commands.h"
 
@@ -436,17 +437,18 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
 
             int n;
             char data[1024];
-            bzero(data, 1024);
+            bzero(data, sizeof(data));
             int bytes_read;
-            while ((bytes_read = fread(data, 1, 1024, FPtr)) > 0)
+            while ((bytes_read = fread(data, 1, sizeof(data), FPtr)) > 0)
             {
                 if (write(fd, data, bytes_read) == -1)
                 {
                     close(fd);
-                    fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+                    printf("%s\n", data);
+                    fprintf(stderr, "Couldn't send file. %s\n", strerror(errno));
                     return;
                 }
-                bzero(data, 1024);
+                bzero(data, sizeof(data));
             }
             fclose(FPtr);
             if (read(fd, response_buffer, MAX_INPUT_SIZE) == -1)

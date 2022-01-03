@@ -10,7 +10,7 @@ int GSR(char *uid, char *gid, char *gname);
 int GUR(char *uid, char *gid);
 int GLM(char *uid, char *buffer);
 int ULS(char *gid, char *buffer);
-FILE *PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, char *data, int size_read, char *mid);
+FILE *PST(char *uid, char *gid, char *text, char *fname, char *mid);
 int RTV(char *uid, char *gid, char *mid);
 FILE *RTVAux(char *gid, int mid, char *buffer);
 

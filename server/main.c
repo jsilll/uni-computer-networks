@@ -37,7 +37,11 @@ int main(int argc, char *argv[])
 
   setupAddresses(PORT);
   listenfd = openSocket(SOCK_STREAM);
-  listen(listenfd, 5);
+  if (listen(listenfd, 5) < 0)
+  {
+    fprintf(stderr, "Error on listen()\n");
+    exit(EXIT_FAILURE);
+  }
   udpfd = openSocket(SOCK_DGRAM);
 
   FD_ZERO(&rset);
@@ -114,6 +118,10 @@ void readCommand()
     {
       close(listenfd);
       close(udpfd);
+      if (VERBOSE)
+      {
+        printf("[TCP] IP: %s PORT: %lu ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
+      }
       handleTCPCommand(connfd, VERBOSE);
       close(connfd);
       exit(EXIT_SUCCESS);
@@ -124,7 +132,6 @@ void readCommand()
 
   if (FD_ISSET(udpfd, &rset))
   {
-
     handleCommandUDP(udpfd, cliaddr, VERBOSE);
   }
 }

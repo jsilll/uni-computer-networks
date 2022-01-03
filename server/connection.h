@@ -34,7 +34,20 @@ void setupAddresses(char *PORT)
 
 int openSocket(int type)
 {
-  int fd = socket(AF_INET, type, 0);
+  int fd;
+
+  if ((fd = socket(AF_INET, type, 0)) < 0)
+  {
+    fprintf(stderr, "Error opening socket.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+  {
+    fprintf(stderr, "setsockopt(SO_REUSEADDR) failed.\n");
+    exit(EXIT_FAILURE);
+  }
+
   switch (type)
   {
   case SOCK_DGRAM:

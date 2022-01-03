@@ -236,14 +236,14 @@ int ULS(char *gid, char *buffer)
  * @param data
  * @return
  */
-FILE *PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, char *data, int size_read, char *mid)
+FILE *PST(char *uid, char *gid, char *text, char *fname, char *mid)
 {
   char path_buffer[256];
 
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s.txt", gid, uid);
   if (n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
   {
-    return NULL; // NOK
+    return NULL;
   }
 
   bzero(mid, 5);
@@ -268,8 +268,7 @@ FILE *PST(char *uid, char *gid, int tsize, char *text, char *fname, int fsize, c
     sprintf(path_buffer, "GROUPS/%s/MSG/%s/F I L E.txt", gid, mid);
     createFile(path_buffer, fname);
     sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid, fname);
-    FPtr = fopen(path_buffer, "wb");
-    WriteFile(FPtr, data, size_read);
+    return fopen(path_buffer, "wb");
   }
 
   return FPtr;

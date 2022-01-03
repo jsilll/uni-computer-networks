@@ -1,6 +1,11 @@
 #ifndef RC_PROJECT_SERVER_COMMAND_HANDLING_H_
 #define RC_PROJECT_SERVER_COMMAND_HANDLING_H_
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdbool.h>
 #include "state/parsing.h"
 #include "state/operations.h"
 
@@ -18,7 +23,8 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 
   if (verbose)
   {
-    printf("[UDP] %s", command_buffer);
+    printf("[UDP] IP: %s PORT: %lu ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
+    printf("%s", command_buffer);
   }
 
   char op[MAX_INPUT_SIZE] = {'\0'};
@@ -155,98 +161,155 @@ void handleTCPCommand(int connfd, bool verbose)
 {
   char command_buffer[MAX_INPUT_SIZE];
   char response_buffer[MAX_INPUT_SIZE];
-
   bzero(command_buffer, MAX_INPUT_SIZE);
-  read(connfd, command_buffer, MAX_INPUT_SIZE); // TODO varios reads?? ficheiro?
 
-  // TODO feio? e nao funciona para o ficheiro
-  // while (strtok(command_buffer, ' ') != NULL)) {
-
-  // }
-
-  char op[MAX_INPUT_SIZE] = {'\0'};
-  char arg1[MAX_INPUT_SIZE] = {'\0'};
-  char arg2[MAX_INPUT_SIZE] = {'\0'};
-  char arg3[MAX_INPUT_SIZE] = {'\0'};
-  char arg4[MAX_INPUT_SIZE] = {'\0'};
-  char arg5[MAX_INPUT_SIZE] = {'\0'};
-  char arg6[MAX_INPUT_SIZE] = {'\0'};
-  int numTokens = sscanf(command_buffer, "%s %s %s %s %s %s %s", op, arg1, arg2, arg3, arg4, arg5, arg6);
-  char format[32];
-
-  if (verbose)
+  char op[5];
+  bzero(op, sizeof(op));
+  read(connfd, op, 4);
+  if (op[3] == ' ')
   {
-    printf("[TCP] %s %s %s %s %s %s %s\n", op, arg1, arg2, arg3, arg4, arg5, arg6);
+    op[3] = '\0';
   }
 
   if (!strcmp(op, "ULS"))
   {
-    if (parseGID(arg1) == -1)
+    char gid[4];
+    bzero(gid, sizeof(gid));
+
+    read(connfd, command_buffer, 3);
+    sscanf(command_buffer, "%3[^\n]", gid);
+
+    if (verbose)
+    {
+      printf("CMD: %s %s\n", op, gid);
+    }
+
+    if (parseGID(gid) == -1)
     {
       strcpy(response_buffer, "RUL NOK\n");
     }
     else
     {
-      ULS(arg1, response_buffer);
+      ULS(gid, response_buffer);
     }
   }
   else if (!strcmp(op, "PST"))
   {
-    int index = strlen(op) + strlen(arg1) + strlen(arg2) + strlen(arg3) + strlen(arg4) + strlen(arg5) + strlen(arg6) + 7;
-    char *arg7 = &command_buffer[index];
+    char uid[7], gid[4], tsize[5], text[240];
+    bzero(uid, sizeof(uid));
+    bzero(gid, sizeof(gid));
+    bzero(tsize, sizeof(tsize));
+    bzero(text, sizeof(text));
 
-    char mid[5];
-    if (parseUID(arg1) == -1 || (parseGID(arg2) == -1) || parseMessageText(arg4, arg3) == -1)
+    bzero(command_buffer, sizeof(command_buffer));
+    read(connfd, command_buffer, 9);
+    sscanf(command_buffer, "%6s %3s", uid, gid);
+    bzero(command_buffer, sizeof(command_buffer));
+    read(connfd, command_buffer, 4);
+    sscanf(command_buffer, "%4s", tsize);
+
+    if (parseUID(uid) == -1 || (parseGID(gid) == -1) || parseTSize(tsize) == -1 || atoi(tsize) < strlen(text))
     {
       strcpy(response_buffer, "RPT NOK\n");
     }
-    else if (numTokens == 5)
-    {
-      if (PST(arg1, arg2, atoi(arg3), arg4, NULL, 0, NULL, 0, mid) == NULL)
-      {
-        strcpy(response_buffer, "RPT NOK\n");
-      }
-      else
-      {
-        sprintf(response_buffer, "RPT %s\n", mid);
-      }
-    }
     else
     {
-      if (parseFileSize(arg6) == -1 || parseFName(arg5) == -1)
+      strcpy(text, &command_buffer[strlen(tsize) + 1]);
+      read(connfd, &text[strlen(text)], atoi(tsize) - strlen(text));
+
+      char mid[5];
+      char c;
+      read(connfd, &c, 1);
+      if (c == '\n')
       {
-        strcpy(response_buffer, "RPT NOK\n");
-      }
-      else
-      {
-        FILE *FPtr;
-        int size_read = MAX_INPUT_SIZE - index;
-        if ((FPtr = PST(arg1, arg2, atoi(arg3), arg4, arg5, atoi(arg6), arg7, size_read, mid)) == NULL)
+        if (verbose)
+        {
+          printf("CMD: %s %s %s %s\n", op, uid, gid, tsize);
+        }
+
+        if (PST(uid, gid, text, NULL, mid) == NULL)
         {
           strcpy(response_buffer, "RPT NOK\n");
         }
         else
         {
-          int n, fsize = atoi(arg6);
-          char data[1024];
-          bzero(data, 1024);
-          while ((size_read < fsize) && (n = read(connfd, data, sizeof(data))) > 0)
-          {
-            printf("fsize: %d size_read: %d\n", fsize, size_read);
-            size_read += n;
-            WriteFile(FPtr, data, n);
-            bzero(data, 1024);
-          }
-          fclose(FPtr);
           sprintf(response_buffer, "RPT %s\n", mid);
         }
+      }
+      else if (c == ' ')
+      {
+        char fname[26], fsize[12], data[1024];
+        bzero(fname, sizeof(fname));
+        bzero(fsize, sizeof(fsize));
+        bzero(data, sizeof(data));
+
+        bzero(command_buffer, sizeof(command_buffer));
+        read(connfd, command_buffer, 36);
+
+        sscanf(command_buffer, "%25s %11s", fname, fsize);
+
+        if (verbose)
+        {
+          printf("CMD: %s %s %s %s %s %s\n", op, uid, gid, tsize, fname, fsize);
+        }
+
+        if (parseFileSize(fsize) == -1 || parseFName(fname) == -1)
+        {
+          strcpy(response_buffer, "RPT NOK\n");
+        }
+        else
+        {
+          strcpy(data, &command_buffer[strlen(fname) + strlen(fsize) + 2]);
+          int size_read = 36 - (strlen(fname) + strlen(fsize) + 2);
+
+          FILE *FPtr;
+          if ((FPtr = PST(uid, gid, text, fname, mid)) == NULL)
+          {
+            strcpy(response_buffer, "RPT NOK\n");
+          }
+          else
+          {
+            WriteFile(FPtr, data, size_read);
+            int n, fsize_int = atoi(fsize);
+            bzero(data, sizeof(data));
+            while ((size_read < fsize_int) && (n = read(connfd, data, sizeof(data))) > 0)
+            {
+              // printf("fsize: %d size_read: %d\n", fsize, size_read);
+              size_read += n;
+              WriteFile(FPtr, data, n);
+              bzero(data, sizeof(data));
+            }
+            fclose(FPtr);
+            sprintf(response_buffer, "RPT %s\n", mid);
+          }
+        }
+      }
+      else
+      {
+        strcpy(response_buffer, "RPT NOK\n");
       }
     }
   }
   else if (!strcmp(op, "RTV"))
   {
     int n_msg = 0;
-    if (parseUID(arg1) == -1 || parseGID(arg2) == -1 || parseMID(arg3) == -1 || (n_msg = RTV(arg1, arg2, arg3)) == -1)
+
+    char uid[7], gid[4], mid[6];
+    bzero(uid, sizeof(uid));
+    bzero(gid, sizeof(gid));
+    bzero(mid, sizeof(mid));
+
+    bzero(command_buffer, sizeof(command_buffer));
+    read(connfd, command_buffer, 14);
+
+    sscanf(command_buffer, "%6s %3s %5s", uid, gid, mid);
+
+    if (verbose)
+    {
+      printf("CMD: %s %s %s %s\n", op, uid, gid, mid);
+    }
+
+    if (parseUID(uid) == -1 || parseGID(gid) == -1 || parseMID(mid) == -1 || (n_msg = RTV(uid, gid, mid)) == -1)
     {
       strcpy(response_buffer, "RRT NOK\n");
     }
@@ -256,14 +319,13 @@ void handleTCPCommand(int connfd, bool verbose)
     }
     else
     {
-      int base_msg = atoi(arg3);
-      char buffer[1024];
+      int base_msg = atoi(mid);
       sprintf(response_buffer, "RRT OK %d", n_msg);
       write(connfd, response_buffer, strlen(response_buffer));
       for (int i = 0; i < n_msg; i++)
       {
         bzero(response_buffer, MAX_INPUT_SIZE);
-        FILE *FPtr = RTVAux(arg2, base_msg + i, response_buffer);
+        FILE *FPtr = RTVAux(uid, base_msg + i, response_buffer);
         write(connfd, response_buffer, strlen(response_buffer));
         if (FPtr != NULL)
         {
@@ -281,7 +343,6 @@ void handleTCPCommand(int connfd, bool verbose)
           fclose(FPtr);
         }
       }
-
       return;
     }
   }

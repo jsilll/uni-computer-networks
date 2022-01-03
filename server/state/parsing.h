@@ -92,17 +92,18 @@ int parseMID(char *mid)
 }
 
 /**
- * @brief Parses a string representing a message text.
- * limited to a maximum of 240 characters
- *
- * @param message string that represents a message text
- * @return int
+ * @brief Parses Tsize argument
+ * 
+ * @param tsize 
+ * @return int 
  */
-int parseMessageText(char *message, char *text_size)
+int parseTSize(char *tsize)
 {
-  int len = strlen(message);
-  if (len > T_SIZE || len == 0) // || atoi(text_size) > len || atoi(text_size) + 1 < len) // TODO
+  int size = atoi(tsize);
+  if (strlen(tsize) > 3 || size > 240 || size <= 0)
+  {
     return -1;
+  }
   return 0;
 }
 
