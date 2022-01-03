@@ -6,20 +6,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdbool.h>
+#include <errno.h>
+
 #include "state/parsing.h"
 #include "state/operations.h"
 
 #define MAX_INPUT_SIZE 1024
-#define MAX_RESPONSE_SIZE 3307
 
 void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 {
   socklen_t len = sizeof(cliaddr);
-  char command_buffer[MAX_INPUT_SIZE];
-  char response_buffer[MAX_RESPONSE_SIZE];
+  char command_buffer[33];
+  bzero(command_buffer, sizeof(command_buffer));
 
-  bzero(command_buffer, MAX_INPUT_SIZE);
-  recvfrom(udpfd, command_buffer, MAX_INPUT_SIZE, 0, (struct sockaddr *)&cliaddr, &len);
+  char response_buffer[3175];
+  recvfrom(udpfd, command_buffer, sizeof(command_buffer), 0, (struct sockaddr *)&cliaddr, &len);
 
   if (verbose)
   {
@@ -27,23 +28,26 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     printf("%s", command_buffer);
   }
 
-  char op[MAX_INPUT_SIZE] = {'\0'};
-  char arg1[MAX_INPUT_SIZE] = {'\0'};
-  char arg2[MAX_INPUT_SIZE] = {'\0'};
-  char arg3[MAX_INPUT_SIZE] = {'\0'};
-  char arg4[MAX_INPUT_SIZE] = {'\0'};
-  char arg5[MAX_INPUT_SIZE] = {'\0'};
-  char arg6[MAX_INPUT_SIZE] = {'\0'};
-  char arg7[MAX_INPUT_SIZE] = {'\0'};
-  sscanf(command_buffer, "%s %s %s %s %s %s %s %s", op, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+  char op[5], uid[7], arg2[10], gname[26], arg4[2];
+  bzero(op, sizeof(op));
+  bzero(uid, sizeof(uid));
+  bzero(arg2, sizeof(arg2));
+  bzero(gname, sizeof(gname));
+  bzero(arg4, sizeof(arg4));
 
-  if (!strcmp(op, "REG"))
+  int numTokens = sscanf(command_buffer, "%4s %6s %9s %25s %1s", op, uid, arg2, gname, arg4);
+
+  if (numTokens > 4)
   {
-    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH)
+    strcpy(response_buffer, "ERR\n");
+  }
+  else if (!strcmp(op, "REG"))
+  {
+    if (parseUID(uid) == -1 || parsePassword(arg2) == REG_NOMATCH)
     {
       strcpy(response_buffer, "RRG NOK\n");
     }
-    else if (REG(arg1, arg2) == -1)
+    else if (REG(uid, arg2) == -1)
     {
       strcpy(response_buffer, "RRG DUP\n");
     }
@@ -54,7 +58,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "UNR"))
   {
-    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH || UNR(arg1, arg2) == -1)
+    if (parseUID(uid) == -1 || parsePassword(arg2) == REG_NOMATCH || UNR(uid, arg2) == -1)
     {
       strcpy(response_buffer, "RUN NOK\n");
     }
@@ -65,7 +69,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "LOG"))
   {
-    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH || LOG(arg1, arg2) == -1)
+    if (parseUID(uid) == -1 || parsePassword(arg2) == REG_NOMATCH || LOG(uid, arg2) == -1)
     {
       strcpy(response_buffer, "RLO NOK\n");
     }
@@ -76,7 +80,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "OUT"))
   {
-    if (parseUID(arg1) == -1 || parsePassword(arg2) == REG_NOMATCH || OUT(arg1, arg2) == -1)
+    if (parseUID(uid) == -1 || parsePassword(arg2) == REG_NOMATCH || OUT(uid, arg2) == -1)
     {
       strcpy(response_buffer, "ROU NOK\n");
     }
@@ -91,7 +95,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "GSR"))
   {
-    if (parseUID(arg1) == -1)
+    if (parseUID(uid) == -1)
     {
       strcpy(response_buffer, "RGS E_USR\n");
     }
@@ -99,14 +103,14 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     {
       strcpy(response_buffer, "RGS E_GRP\n");
     }
-    else if (parseGName(arg3) == REG_NOMATCH)
+    else if (parseGName(gname) == REG_NOMATCH)
     {
       strcpy(response_buffer, "RGS E_GNAME\n");
     }
     else
     {
       int res;
-      switch (res = GSR(arg1, arg2, arg3))
+      switch (res = GSR(uid, arg2, gname))
       {
       case 0:
         strcpy(response_buffer, "RGS OK\n");
@@ -125,7 +129,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "GUR"))
   {
-    if (parseUID(arg1) == -1)
+    if (parseUID(uid) == -1)
     {
       strcpy(response_buffer, "RGU E_USR\n");
     }
@@ -133,7 +137,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     {
       strcpy(response_buffer, "RGU E_GRP\n");
     }
-    else if (GUR(arg1, arg2) == -1)
+    else if (GUR(uid, arg2) == -1)
     {
       strcpy(response_buffer, "RGU NOK\n");
     }
@@ -144,7 +148,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "GLM"))
   {
-    if (parseUID(arg1) == -1 || GLM(arg1, response_buffer) == -1)
+    if (parseUID(uid) == -1 || GLM(uid, response_buffer) == -1)
     {
       strcpy(response_buffer, "RGM E_USR\n");
     }
@@ -159,9 +163,9 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 
 void handleTCPCommand(int connfd, bool verbose)
 {
-  char command_buffer[MAX_INPUT_SIZE];
-  char response_buffer[MAX_INPUT_SIZE];
-  bzero(command_buffer, MAX_INPUT_SIZE);
+  char command_buffer[36];
+  char buffer[1024];
+  bzero(command_buffer, sizeof(command_buffer));
 
   char op[5];
   bzero(op, sizeof(op));
@@ -186,11 +190,11 @@ void handleTCPCommand(int connfd, bool verbose)
 
     if (parseGID(gid) == -1)
     {
-      strcpy(response_buffer, "RUL NOK\n");
+      strcpy(buffer, "RUL NOK\n");
     }
     else
     {
-      ULS(gid, response_buffer);
+      ULS(gid, buffer);
     }
   }
   else if (!strcmp(op, "PST"))
@@ -210,7 +214,7 @@ void handleTCPCommand(int connfd, bool verbose)
 
     if (parseUID(uid) == -1 || (parseGID(gid) == -1) || parseTSize(tsize) == -1 || atoi(tsize) < strlen(text))
     {
-      strcpy(response_buffer, "RPT NOK\n");
+      strcpy(buffer, "RPT NOK\n");
     }
     else
     {
@@ -229,19 +233,19 @@ void handleTCPCommand(int connfd, bool verbose)
 
         if (PST(uid, gid, text, NULL, mid) == NULL)
         {
-          strcpy(response_buffer, "RPT NOK\n");
+          strcpy(buffer, "RPT NOK\n");
         }
         else
         {
-          sprintf(response_buffer, "RPT %s\n", mid);
+          sprintf(buffer, "RPT %s\n", mid);
         }
       }
       else if (c == ' ')
       {
-        char fname[26], fsize[12], data[1024];
+        char fname[26], fsize[12];
         bzero(fname, sizeof(fname));
         bzero(fsize, sizeof(fsize));
-        bzero(data, sizeof(data));
+        bzero(buffer, sizeof(buffer));
 
         bzero(command_buffer, sizeof(command_buffer));
         read(connfd, command_buffer, 36);
@@ -255,38 +259,37 @@ void handleTCPCommand(int connfd, bool verbose)
 
         if (parseFileSize(fsize) == -1 || parseFName(fname) == -1)
         {
-          strcpy(response_buffer, "RPT NOK\n");
+          strcpy(buffer, "RPT NOK\n");
         }
         else
         {
-          strcpy(data, &command_buffer[strlen(fname) + strlen(fsize) + 2]);
+          strcpy(buffer, &command_buffer[strlen(fname) + strlen(fsize) + 2]);
           int size_read = 36 - (strlen(fname) + strlen(fsize) + 2);
 
           FILE *FPtr;
           if ((FPtr = PST(uid, gid, text, fname, mid)) == NULL)
           {
-            strcpy(response_buffer, "RPT NOK\n");
+            strcpy(buffer, "RPT NOK\n");
           }
           else
           {
-            WriteFile(FPtr, data, size_read);
+            WriteFile(FPtr, buffer, size_read);
             int n, fsize_int = atoi(fsize);
-            bzero(data, sizeof(data));
-            while ((size_read < fsize_int) && (n = read(connfd, data, sizeof(data))) > 0)
+            bzero(buffer, sizeof(buffer));
+            while ((size_read < fsize_int) && (n = read(connfd, buffer, sizeof(buffer))) > 0)
             {
-              // printf("fsize: %d size_read: %d\n", fsize, size_read);
               size_read += n;
-              WriteFile(FPtr, data, n);
-              bzero(data, sizeof(data));
+              WriteFile(FPtr, buffer, n);
+              bzero(buffer, sizeof(buffer));
             }
             fclose(FPtr);
-            sprintf(response_buffer, "RPT %s\n", mid);
+            sprintf(buffer, "RPT %s\n", mid);
           }
         }
       }
       else
       {
-        strcpy(response_buffer, "RPT NOK\n");
+        strcpy(buffer, "RPT NOK\n");
       }
     }
   }
@@ -311,34 +314,33 @@ void handleTCPCommand(int connfd, bool verbose)
 
     if (parseUID(uid) == -1 || parseGID(gid) == -1 || parseMID(mid) == -1 || (n_msg = RTV(uid, gid, mid)) == -1)
     {
-      strcpy(response_buffer, "RRT NOK\n");
+      strcpy(buffer, "RRT NOK\n");
     }
     else if (n_msg == 0)
     {
-      strcpy(response_buffer, "RRT EOF\n");
+      strcpy(buffer, "RRT EOF\n");
     }
     else
     {
       int base_msg = atoi(mid);
-      sprintf(response_buffer, "RRT OK %d", n_msg);
-      write(connfd, response_buffer, strlen(response_buffer));
+      sprintf(buffer, "RRT OK %d", n_msg);
+      write(connfd, buffer, strlen(buffer));
       for (int i = 0; i < n_msg; i++)
       {
-        bzero(response_buffer, MAX_INPUT_SIZE);
-        FILE *FPtr = RTVAux(uid, base_msg + i, response_buffer);
-        write(connfd, response_buffer, strlen(response_buffer));
+        bzero(buffer, sizeof(buffer));
+        FILE *FPtr = RTVAux(uid, base_msg + i, buffer);
+        write(connfd, buffer, strlen(buffer));
         if (FPtr != NULL)
         {
-          char data[1024];
           int bytes_read;
-          while ((bytes_read = ReadFile(FPtr, data, 1024)) > 0)
+          while ((bytes_read = ReadFile(FPtr, buffer, 1024)) > 0)
           {
-            if (write(connfd, data, bytes_read) == -1)
+            if (write(connfd, buffer, bytes_read) == -1)
             {
               close(connfd);
               fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
             }
-            bzero(data, 1024);
+            bzero(buffer, sizeof(buffer));
           }
           fclose(FPtr);
         }
@@ -348,10 +350,10 @@ void handleTCPCommand(int connfd, bool verbose)
   }
   else
   {
-    strcpy(response_buffer, "ERR\n");
+    strcpy(buffer, "ERR\n");
   }
 
-  write(connfd, response_buffer, strlen(response_buffer));
+  write(connfd, buffer, strlen(buffer));
 }
 
 #endif //RC_PROJECT_SERVER_COMMAND_HANDLING_H_

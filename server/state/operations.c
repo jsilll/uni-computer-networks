@@ -436,7 +436,7 @@ void listGroups(char *buffer, char *uid)
         DIR *dr3 = opendir(path_buffer);
         while ((de3 = readdir(dr3)) != NULL)
         {
-          if (de3->d_name[0] == '.')
+          if (de3->d_name[0] == '.' || de3->d_name[0] == 'n')
             continue;
           n_messages++;
         }
