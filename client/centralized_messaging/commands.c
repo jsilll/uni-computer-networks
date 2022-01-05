@@ -74,7 +74,7 @@ void sendCommandUDP()
     if (sendto(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER), 0, ADDR_UDP->ai_addr, ADDR_UDP->ai_addrlen) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+        fprintf(stderr, "Couldn't send command_buffer.\n");
         return;
     }
 
@@ -125,7 +125,7 @@ void sendCommandTCP()
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+        fprintf(stderr, "Couldn't send command_buffer.\n");
         return;
     }
 
@@ -374,13 +374,12 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
             if (write(fd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
             {
                 close(fd);
-                fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+                fprintf(stderr, "Couldn't send command_buffer.\n");
                 return;
             }
 
             // read()
 
-            int n;
             char data[1024];
             bzero(data, sizeof(data));
             int bytes_read;
@@ -405,8 +404,12 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
                 }
                 bzero(data, sizeof(data));
             }
-
             fclose(FPtr);
+            if (write(fd, "\n", 1) == -1)
+            {
+                fprintf(stderr, "Couldn't send file. %s\n", strerror(errno));
+            }
+
             if (read(fd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
             {
                 close(fd);
@@ -467,7 +470,7 @@ void retrieve(char *mid)
     if (write(fd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(fd);
-        fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
+        fprintf(stderr, "Couldn't send command_buffer.\n");
         return;
     }
 
