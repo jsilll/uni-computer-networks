@@ -541,21 +541,12 @@ void RTV(char *mid)
 
     int fd;
 
-    bzero(response_buffer, MAX_INPUT_SIZE);
+    bzero(response_buffer, sizeof(response_buffer));
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
         return;
     }
-
-    // struct timeval tmout;
-    // memset((char *)&tmout, 0, sizeof(tmout));
-    // tmout.tv_sec = 15;
-    // if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
-    // {
-    //     fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-    //     exit(EXIT_FAILURE);
-    // }
 
     if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
     {
@@ -585,7 +576,6 @@ void RTV(char *mid)
 
         if (!strcmp(status, "OK"))
         {
-            printf("%s %s\n", op, status);
             char data[1024];
             bzero(data, 1024);
 
@@ -599,6 +589,7 @@ void RTV(char *mid)
             char n_msg[3];
             fscanf(TempFile, "%s ", n_msg);
             int num_msg = atoi(n_msg);
+            printf("%s %s %d\n", op, status, num_msg);
 
             for (int i = 0; i < num_msg; i++)
             {

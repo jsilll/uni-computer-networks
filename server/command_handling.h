@@ -165,6 +165,7 @@ void handleTCPCommand(int connfd, bool verbose)
 {
   char command_buffer[36];
   char buffer[1024];
+  bzero(buffer, sizeof(buffer));
   bzero(command_buffer, sizeof(command_buffer));
 
   char op[5];
@@ -273,7 +274,6 @@ void handleTCPCommand(int connfd, bool verbose)
           }
           else
           {
-            printf("DEBUG 1\n");
             WriteFile(FPtr, &command_buffer[strlen(fname) + strlen(fsize) + 2], size_read);
             int n, fsize_int = atoi(fsize);
             bzero(buffer, sizeof(buffer));
@@ -323,17 +323,18 @@ void handleTCPCommand(int connfd, bool verbose)
     }
     else
     {
+
       int base_msg = atoi(mid);
       sprintf(buffer, "RRT OK %d", n_msg);
       write(connfd, buffer, strlen(buffer));
       for (int i = 0; i < n_msg; i++)
       {
-        bzero(buffer, sizeof(buffer));
-        FILE *FPtr = RTVAux(uid, base_msg + i, buffer);
+        FILE *FPtr = RTVAux(gid, base_msg + i, buffer);
         write(connfd, buffer, strlen(buffer));
         if (FPtr != NULL)
         {
           int bytes_read;
+          bzero(buffer, sizeof(buffer));
           while ((bytes_read = ReadFile(FPtr, buffer, 1024)) > 0)
           {
             if (write(connfd, buffer, bytes_read) == -1)
