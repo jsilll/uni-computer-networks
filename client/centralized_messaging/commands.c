@@ -10,8 +10,6 @@
 #include <errno.h>
 #include "commands.h"
 
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-
 bool LOGGED_IN = false;
 char UID[6], PASSWORD[9], GID[3];
 char COMMAND_BUFFER[512], RESPONSE_BUFFER[3275];
@@ -146,9 +144,9 @@ void sendCommandTCP()
  * @param uid
  * @param pass
  */
-void registerUser(char *uid_arg, char *pass_arg)
+void registerUser(char *uid, char *password)
 {
-    sprintf(COMMAND_BUFFER, "REG %s %s\n", uid_arg, pass_arg);
+    sprintf(COMMAND_BUFFER, "REG %s %s\n", uid, password);
     sendCommandUDP();
     printf("%s", RESPONSE_BUFFER);
 }
@@ -156,12 +154,12 @@ void registerUser(char *uid_arg, char *pass_arg)
 /**
  * @brief Unregsiters a user
  *
- * @param uid_arg
- * @param pass_arg
+ * @param uid
+ * @param password
  */
-void unregisterUser(char *uid_arg, char *pass_arg)
+void unregisterUser(char *uid, char *password)
 {
-    sprintf(COMMAND_BUFFER, "UNR %s %s\n", uid_arg, pass_arg);
+    sprintf(COMMAND_BUFFER, "UNR %s %s\n", uid, password);
     sendCommandUDP();
     printf("%s", RESPONSE_BUFFER);
 }
@@ -169,25 +167,24 @@ void unregisterUser(char *uid_arg, char *pass_arg)
 /**
  * @brief Logs a user in the server
  *
- * @param uid_arg
- * @param pass_arg
+ * @param uid
+ * @param password
  */
-void login(char *uid_arg, char *pass_arg)
+void login(char *uid, char *password)
 {
-    sprintf(COMMAND_BUFFER, "LOG %s %s\n", uid_arg, pass_arg);
+    sprintf(COMMAND_BUFFER, "LOG %s %s\n", uid, password);
     sendCommandUDP();
     printf("%s", RESPONSE_BUFFER);
     if (!strcmp(RESPONSE_BUFFER, "RLO OK\n"))
     {
         LOGGED_IN = true;
-        strcpy(UID, uid_arg);
-        strcpy(PASSWORD, pass_arg);
+        strcpy(UID, uid);
+        strcpy(PASSWORD, password);
     }
 }
 
 /**
  * @brief Logs a user out of the server
- *
  */
 void logout()
 {
@@ -233,7 +230,6 @@ void exitClient()
 
 /**
  * @brief Lists all the groups on the server
- *
  */
 void groups()
 {
@@ -245,14 +241,14 @@ void groups()
 /**
  * @brief Subscribes a user to a group
  *
- * @param gid_arg
- * @param gid_name_arg
+ * @param gid
+ * @param gname
  */
-void subscribe(char *gid_arg, char *gid_name_arg)
+void subscribe(char *gid, char *gname)
 {
     if (LOGGED_IN)
     {
-        sprintf(COMMAND_BUFFER, "GSR %s %s %s\n", UID, gid_arg, gid_name_arg);
+        sprintf(COMMAND_BUFFER, "GSR %s %s %s\n", UID, gid, gname);
         sendCommandUDP();
         printf("%s", RESPONSE_BUFFER);
     }
@@ -265,13 +261,13 @@ void subscribe(char *gid_arg, char *gid_name_arg)
 /**
  * @brief Unsubscribes a user from a group
  *
- * @param gid_arg
+ * @param gid
  */
-void unsubscribe(char *gid_arg)
+void unsubscribe(char *gid)
 {
     if (LOGGED_IN)
     {
-        sprintf(COMMAND_BUFFER, "GUR %s %s\n", UID, gid_arg);
+        sprintf(COMMAND_BUFFER, "GUR %s %s\n", UID, gid);
         sendCommandUDP();
         printf("%s", RESPONSE_BUFFER);
     }
@@ -295,12 +291,12 @@ void myGroups()
 /**
  * @brief Selects a group
  *
- * @param gid_arg
+ * @param gid
  */
-void selectGroup(char *gid_arg)
+void selectGroup(char *gid)
 {
-    strcpy(GID, gid_arg);
-    printf("select %s\n", gid_arg);
+    strcpy(GID, gid);
+    printf("select %s\n", gid);
 }
 
 /**
@@ -531,7 +527,7 @@ void retrieve(char *mid)
 
                     for (int j = 0; j < iter; j += 1024)
                     {
-                        size_t size = fread(data, sizeof(char), min(1024, iter - j), TempFile);
+                        size_t size = fread(data, sizeof(char), ((1024) < (iter - j)) ? (1024) : (iter - j), TempFile);
                         fwrite(data, sizeof(char), size, DataFile);
                     }
                     fclose(DataFile);
