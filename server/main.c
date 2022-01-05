@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
   strcpy(PORT, DEFAULT_PORT);
   loadInitArgs(argc, argv);
 
-  printf("Centralized Messaging Server Initialized\n");
-  printf("PORT: %s VERBOSE: %d\n", PORT, VERBOSE);
+  printf("Centralized Messaging Server\n");
+  printf("PORT %s VERBOSE %s\n", PORT, VERBOSE ? "On" : "Off");
 
   setupAddresses(PORT);
   listenfd = openSocket(SOCK_STREAM);

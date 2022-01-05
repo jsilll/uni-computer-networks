@@ -30,7 +30,8 @@ int main(int argc, char *argv[])
 
   loadInitArgs(argc, argv);
 
-  printf("Centralized Messaging Client %s:%s\n", ADDRESS, PORT);
+  printf("Centralized Messaging Client\n");
+  printf("ADDRESS:%s PORT:%s\n", ADDRESS, PORT);
 
   if (setupServerAddresses(ADDRESS, PORT) != 0)
   {
