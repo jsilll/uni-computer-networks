@@ -92,6 +92,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   else if (!strcmp(op, "GLS"))
   {
     GLS(response_buffer);
+    printf("%s", response_buffer);
   }
   else if (!strcmp(op, "GSR"))
   {

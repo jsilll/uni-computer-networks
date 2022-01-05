@@ -405,6 +405,8 @@ void listGroups(char *buffer, char *uid)
     sprintf(name_file, "%s_name.txt", gid);
     sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s", gid);
 
+    printf("DEBUG: %s", gid);
+
     n_messages = 0;
     struct dirent *de2;
     DIR *dr2 = opendir(path_buffer);
