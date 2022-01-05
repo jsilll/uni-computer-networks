@@ -9,6 +9,7 @@
         "random": "c",
         "istream": "c",
         "limits": "c",
-        "numeric": "c"
+        "numeric": "c",
+        "netdb.h": "c"
     }
 }

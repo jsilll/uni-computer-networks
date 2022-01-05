@@ -77,6 +77,15 @@ int sendCommandUDP()
         return -1;
     }
 
+    // struct timeval tmout;
+    // memset((char *)&tmout, 0, sizeof(tmout));
+    // tmout.tv_sec = 15;
+    // if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+    // {
+    //     fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+    //     exit(EXIT_FAILURE);
+    // }
+
     if (sendto(fd, command_buffer, strlen(command_buffer), 0, server_address_udp->ai_addr, server_address_udp->ai_addrlen) == -1)
     {
         close(fd);
@@ -114,6 +123,15 @@ int sendCommandTCP()
         fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
         return -1;
     }
+
+    // struct timeval tmout;
+    // memset((char *)&tmout, 0, sizeof(tmout));
+    // tmout.tv_sec = 15;
+    // if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+    // {
+    //     fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+    //     exit(EXIT_FAILURE);
+    // }
 
     if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
     {
@@ -421,6 +439,23 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
                 return;
             }
 
+            // struct timeval tmout;
+            // memset((char *)&tmout, 0, sizeof(tmout));
+            // tmout.tv_sec = 15;
+            // if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+            // {
+            //     fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+            //     exit(EXIT_FAILURE);
+            // }
+
+            // memset((char *)&tmout, 0, sizeof(tmout));
+            // tmout.tv_sec = 15;
+            // if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+            // {
+            //     fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+            //     exit(EXIT_FAILURE);
+            // }
+
             if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
             {
                 close(fd);
@@ -435,6 +470,8 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
                 return;
             }
 
+            // read()
+
             int n;
             char data[1024];
             bzero(data, sizeof(data));
@@ -443,13 +480,24 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
             {
                 if (write(fd, data, bytes_read) == -1)
                 {
+                    // Ler o RPT NOK
+                    switch (errno)
+                    {
+                    case ECONNRESET:
+                        read(fd, response_buffer, MAX_INPUT_SIZE);
+                        printf("%s", response_buffer);
+                        break;
+
+                    default:
+                        fprintf(stderr, "Couldn't send file. %s\n", strerror(errno));
+                        break;
+                    }
                     close(fd);
-                    printf("%s\n", data);
-                    fprintf(stderr, "Couldn't send file. %s\n", strerror(errno));
                     return;
                 }
                 bzero(data, sizeof(data));
             }
+
             fclose(FPtr);
             if (read(fd, response_buffer, MAX_INPUT_SIZE) == -1)
             {
@@ -457,6 +505,7 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
                 fprintf(stderr, "Error receiving server's response.\n");
                 return;
             }
+
             close(fd);
             printf("%s", response_buffer);
         }
@@ -498,6 +547,15 @@ void RTV(char *mid)
         fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
         return;
     }
+
+    // struct timeval tmout;
+    // memset((char *)&tmout, 0, sizeof(tmout));
+    // tmout.tv_sec = 15;
+    // if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+    // {
+    //     fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+    //     exit(EXIT_FAILURE);
+    // }
 
     if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
     {

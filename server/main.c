@@ -114,8 +114,27 @@ void readCommand()
   {
     socklen_t len = sizeof(cliaddr);
     int connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &len);
+
     if (fork() == 0)
     {
+
+      // struct timeval tmout;
+      // memset((char *)&tmout, 0, sizeof(tmout));
+      // tmout.tv_sec = 15;
+      // if (setsockopt(connfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+      // {
+      //   fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+      //   exit(EXIT_FAILURE);
+      // }
+
+      // memset((char *)&tmout, 0, sizeof(tmout));
+      // tmout.tv_sec = 15;
+      // if (setsockopt(connfd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+      // {
+      //   fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+      //   exit(EXIT_FAILURE);
+      // }
+
       close(listenfd);
       close(udpfd);
       if (VERBOSE)

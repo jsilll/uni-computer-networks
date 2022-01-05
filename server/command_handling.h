@@ -259,11 +259,11 @@ void handleTCPCommand(int connfd, bool verbose)
 
         if (parseFileSize(fsize) == -1 || parseFName(fname) == -1)
         {
+          printf("%s %s\n", fsize, fname);
           strcpy(buffer, "RPT NOK\n");
         }
         else
         {
-          strcpy(buffer, &command_buffer[strlen(fname) + strlen(fsize) + 2]);
           int size_read = 36 - (strlen(fname) + strlen(fsize) + 2);
 
           FILE *FPtr;
@@ -273,7 +273,8 @@ void handleTCPCommand(int connfd, bool verbose)
           }
           else
           {
-            WriteFile(FPtr, buffer, size_read);
+            printf("DEBUG 1\n");
+            WriteFile(FPtr, &command_buffer[strlen(fname) + strlen(fsize) + 2], size_read);
             int n, fsize_int = atoi(fsize);
             bzero(buffer, sizeof(buffer));
             while ((size_read < fsize_int) && (n = read(connfd, buffer, sizeof(buffer))) > 0)
