@@ -8,17 +8,14 @@
 #include <netinet/in.h>
 #include <libgen.h>
 #include <errno.h>
-
 #include "commands.h"
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX_INPUT_SIZE 128
 
-bool logged_in = false;
-char uid[6], pass[9], gid[3];
-
-char command_buffer[MAX_INPUT_SIZE], response_buffer[MAX_INPUT_SIZE];
-struct addrinfo *server_address_udp, *address_tcp; // TODO
+bool LOGGED_IN = false;
+char UID[6], PASSWORD[9], GID[3];
+char COMMAND_BUFFER[512], RESPONSE_BUFFER[3275];
+struct addrinfo *ADDR_UDP, *ADDR_TCP;
 
 /**
  * @brief Sets up the UDP socket
@@ -35,14 +32,14 @@ int setupServerAddresses(char *ip, char *port)
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if ((errcode = getaddrinfo(ip, port, &hints, &server_address_udp)) != 0)
+    if ((errcode = getaddrinfo(ip, port, &hints, &ADDR_UDP)) != 0)
     {
         fprintf(stderr, "Error on getaddrinfo (udp): %s\n", gai_strerror(errcode));
         return -1;
     }
 
     hints.ai_socktype = SOCK_STREAM;
-    if ((errcode = getaddrinfo(ip, port, &hints, &address_tcp)) != 0)
+    if ((errcode = getaddrinfo(ip, port, &hints, &ADDR_TCP)) != 0)
     {
         fprintf(stderr, "Error on getaddrinfo (udp): %s\n", gai_strerror(errcode));
         return -1;
@@ -52,12 +49,12 @@ int setupServerAddresses(char *ip, char *port)
 }
 
 /**
- * Frees the server adresses
+ * @brief Frees the server adresses
  */
 void freeServerAddress()
 {
-    free(server_address_udp);
-    free(address_tcp);
+    free(ADDR_UDP);
+    free(ADDR_TCP);
 }
 
 /**
@@ -65,36 +62,33 @@ void freeServerAddress()
  *
  * @param command_buffer
  */
-int sendCommandUDP()
+void sendCommandUDP()
 {
-    int fd;
-
-    bzero(response_buffer, MAX_INPUT_SIZE);
-
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+    int sockfd;
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
     {
         fprintf(stderr, "Couldn't send command_buffer. Error creating UDP socket.\n");
-        return -1;
+        return;
     }
 
-    if (sendto(fd, command_buffer, strlen(command_buffer), 0, server_address_udp->ai_addr, server_address_udp->ai_addrlen) == -1)
+    if (sendto(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER), 0, ADDR_UDP->ai_addr, ADDR_UDP->ai_addrlen) == -1)
     {
-        close(fd);
+        close(sockfd);
         fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
-        return -1;
+        return;
     }
 
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
-    if (recvfrom(fd, response_buffer, MAX_INPUT_SIZE, 0, (struct sockaddr *)&addr, &addrlen) == -1)
+    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+    if (recvfrom(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER), 0, (struct sockaddr *)&addr, &addrlen) == -1)
     {
-        close(fd);
+        close(sockfd);
         fprintf(stderr, "Error receiving server's response.\n");
-        return -1;
+        return;
     }
 
-    close(fd);
-    return 0;
+    close(sockfd);
 }
 
 /**
@@ -103,155 +97,110 @@ int sendCommandUDP()
  * @param command_buffer
  * @param response_buffer
  */
-int sendCommandTCP()
+void sendCommandTCP()
 {
-    int fd;
-
-    bzero(response_buffer, MAX_INPUT_SIZE);
-
-    if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    int sockfd;
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
-        return -1;
+        return;
     }
 
     struct timeval tmout;
     memset((char *)&tmout, 0, sizeof(tmout));
     tmout.tv_sec = 15;
-    if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
     {
         fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
         exit(EXIT_FAILURE);
     }
 
-    if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
+    if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
     {
-        close(fd);
+        close(sockfd);
         fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
-        return -1;
+        return;
     }
 
-    if (write(fd, command_buffer, strlen(command_buffer)) == -1)
+    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
-        close(fd);
+        close(sockfd);
         fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
-        return -1;
+        return;
     }
 
-    if (read(fd, response_buffer, MAX_INPUT_SIZE) == -1)
+    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+    if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
     {
-        close(fd);
+        close(sockfd);
         fprintf(stderr, "Error receiving server's response.\n");
-        return -1;
+        return;
     }
 
-    close(fd);
-    return 0;
-}
-
-int sendFileTCP()
-{
-    int fd;
-
-    bzero(response_buffer, MAX_INPUT_SIZE);
-
-    if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-        fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
-        return -1;
-    }
-
-    if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
-    {
-        close(fd);
-        fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
-        return -1;
-    }
-
-    if (write(fd, command_buffer, strlen(command_buffer)) == -1)
-    {
-        close(fd);
-        fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
-        return -1;
-    }
-
-    return 0;
+    close(sockfd);
 }
 
 /**
- * @brief Following this command the User application sends a
- * message to the DS server, using the UDP protocol, asking to
- * register a new user, sending its identification UID and a
- * selected password pass. The result of the DS registration request
- * should be displayed.
+ * @brief Registers a user
  *
  * @param uid
  * @param pass
  */
-int REG(char *uid_arg, char *pass_arg)
+void registerUser(char *uid_arg, char *pass_arg)
 {
-    sprintf(command_buffer, "REG %s %s\n", uid_arg, pass_arg);
+    sprintf(COMMAND_BUFFER, "REG %s %s\n", uid_arg, pass_arg);
     sendCommandUDP();
-    printf("%s", response_buffer);
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
- * @brief Following this command the User application sends
- * a message to the DS server, using the UDP protocol, asking to unregister the
- * user with identification UID and password pass. The DS server should
- * GUR this user from all GLS in which it was subscribed. The result of
- * the unregister request should be displayed.
+ * @brief Unregsiters a user
  *
  * @param uid_arg
  * @param pass_arg
  */
-void UNR(char *uid_arg, char *pass_arg)
+void unregisterUser(char *uid_arg, char *pass_arg)
 {
-    sprintf(command_buffer, "UNR %s %s\n", uid_arg, pass_arg);
+    sprintf(COMMAND_BUFFER, "UNR %s %s\n", uid_arg, pass_arg);
     sendCommandUDP();
-    printf("%s", response_buffer);
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
- * @brief Following this command the User application sends a
- * message in UDP to the DS to validate the user credentials: UID and pass. The
- * result of the DS validation should be displayed to the user.
- * The User application memorizes the UID in usage.
+ * @brief Logs a user in the server
  *
  * @param uid_arg
  * @param pass_arg
  */
-void LOG(char *uid_arg, char *pass_arg)
+void login(char *uid_arg, char *pass_arg)
 {
-    sprintf(command_buffer, "LOG %s %s\n", uid_arg, pass_arg);
+    sprintf(COMMAND_BUFFER, "LOG %s %s\n", uid_arg, pass_arg);
     sendCommandUDP();
-    printf("%s", response_buffer);
-    if (!strcmp(response_buffer, "RLO OK\n"))
+    printf("%s", RESPONSE_BUFFER);
+    if (!strcmp(RESPONSE_BUFFER, "RLO OK\n"))
     {
-        logged_in = true;
-        strcpy(uid, uid_arg);
-        strcpy(pass, pass_arg);
+        LOGGED_IN = true;
+        strcpy(UID, uid_arg);
+        strcpy(PASSWORD, pass_arg);
     }
 }
 
 /**
- * @brief Following this command the User application (locally) forgets the credentials of the
- * previously logged in user. A new LOG command, with different credentials, can
- * then be issued.
+ * @brief Logs a user out of the server
  *
  */
-void OUT()
+void logout()
 {
-    if (logged_in)
+    if (LOGGED_IN)
     {
-        sprintf(command_buffer, "OUT %s %s\n", uid, pass);
+        sprintf(COMMAND_BUFFER, "OUT %s %s\n", UID, PASSWORD);
         sendCommandUDP();
-        printf("%s", response_buffer);
-        if (!strcmp(response_buffer, "ROU OK\n"))
+        printf("%s", RESPONSE_BUFFER);
+        if (!strcmp(RESPONSE_BUFFER, "ROU OK\n"))
         {
-            logged_in = false;
-            strcpy(uid, "");
-            strcpy(pass, "");
+            LOGGED_IN = false;
+            bzero(UID, sizeof(UID));
+            bzero(PASSWORD, sizeof(PASSWORD));
         }
     }
     else
@@ -260,14 +209,13 @@ void OUT()
     }
 }
 /**
- * @brief Following this command the User application locally
- * displays the UID of the user that is logged in.
+ * @brief Displays the user's UID
  */
 void showUID()
 {
-    if (logged_in)
+    if (LOGGED_IN)
     {
-        printf("UID: %s\n", uid);
+        printf("UID: %s\n", UID);
     }
     else
     {
@@ -276,8 +224,7 @@ void showUID()
 }
 
 /**
- * @brief Following this command the User application terminates, after making sure that all TCP
- * connections are closed.
+ * @brief Exits the client
  */
 void exitClient()
 {
@@ -285,67 +232,29 @@ void exitClient()
 }
 
 /**
- * @brief Following this command the User application sends the DS
- * server a message in UDP asking for the list of available GLS. The reply
- * should be displayed as a list of group IDs (GID) and names (GName).
+ * @brief Lists all the groups on the server
  *
  */
-void GLS()
+void groups()
 {
-    sprintf(command_buffer, "GLS\n");
-
-    int fd;
-
-    bzero(response_buffer, MAX_INPUT_SIZE);
-
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-    {
-        fprintf(stderr, "Couldn't send command_buffer. Error creating UDP socket.\n");
-        return -1;
-    }
-
-    if (sendto(fd, command_buffer, strlen(command_buffer), 0, server_address_udp->ai_addr, server_address_udp->ai_addrlen) == -1)
-    {
-        close(fd);
-        fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
-        return -1;
-    }
-
-    struct sockaddr_in addr;
-    socklen_t addrlen = sizeof(addr);
-    int res;
-    while ((res = recvfrom(fd, response_buffer, MAX_INPUT_SIZE, 0, (struct sockaddr *)&addr, &addrlen)) >= 0)
-    {
-        printf("%s", response_buffer);
-        if (res == -1)
-        {
-            close(fd);
-            fprintf(stderr, "Error receiving server's response.\n");
-            return -1;
-        }
-    }
-
-    close(fd);
+    sprintf(COMMAND_BUFFER, "GLS\n");
+    sendCommandUDP(COMMAND_BUFFER, RESPONSE_BUFFER);
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
- * @brief Following this command the
- * User application sends the DS server a message in UDP, including the user’s
- * UID, asking to GSR the desired group, identified by its GID and GName. If
- * GID = 0 this corresponds to a request to create and GSR to a new group
- * named GName. The confirmation of successful subscription (or not) should be
- * displayed.
+ * @brief Subscribes a user to a group
  *
  * @param gid_arg
  * @param gid_name_arg
  */
-void GSR(char *gid_arg, char *gid_name_arg)
+void subscribe(char *gid_arg, char *gid_name_arg)
 {
-    if (logged_in)
+    if (LOGGED_IN)
     {
-        sprintf(command_buffer, "GSR %s %s %s\n", uid, gid_arg, gid_name_arg);
+        sprintf(COMMAND_BUFFER, "GSR %s %s %s\n", UID, gid_arg, gid_name_arg);
         sendCommandUDP();
-        printf("%s", response_buffer);
+        printf("%s", RESPONSE_BUFFER);
     }
     else
     {
@@ -354,20 +263,17 @@ void GSR(char *gid_arg, char *gid_name_arg)
 }
 
 /**
- * @brief Following this command the User
- * application sends the DS server a message in UDP, including the user’s UID,
- * asking to GUR group GID. The confirmation of success (or not) should
- * be displayed.
+ * @brief Unsubscribes a user from a group
  *
  * @param gid_arg
  */
-void GUR(char *gid_arg)
+void unsubscribe(char *gid_arg)
 {
-    if (logged_in)
+    if (LOGGED_IN)
     {
-        sprintf(command_buffer, "GUR %s %s\n", uid, gid_arg);
+        sprintf(COMMAND_BUFFER, "GUR %s %s\n", UID, gid_arg);
         sendCommandUDP();
-        printf("%s", response_buffer);
+        printf("%s", RESPONSE_BUFFER);
     }
     else
     {
@@ -376,67 +282,55 @@ void GUR(char *gid_arg)
 }
 
 /**
- * @brief Following this command the User application sends
- * the DS server a message in UDP, including the user’s UID, asking the list of
- * GLS to which this user has already subscribed. The reply should be displayed
- * as a list of group IDs and names.
+ * @brief Lists all the groups a user is subscribed to
  *
  */
-void GLM()
+void myGroups()
 {
-    sprintf(command_buffer, "GLM %s\n", uid);
+    sprintf(COMMAND_BUFFER, "GLM %s\n", UID);
     sendCommandUDP();
-    printf("%s", response_buffer);
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
- * @brief Following this command the User application
- * locally memorizes GID as the ID of the active group. Subsequent ULS, PST
- * and RTV messaging commands refer to this GID.
+ * @brief Selects a group
  *
  * @param gid_arg
  */
 void selectGroup(char *gid_arg)
 {
-    strcpy(gid, gid_arg);
-    printf("(local) select %s\n", gid_arg);
+    strcpy(GID, gid_arg);
+    printf("select %s\n", gid_arg);
 }
 
 /**
- * @brief Following this command the User application locally
- * displays the GID of the selected group.
+ * @brief Displays the selected GID
  */
 void showGID()
 {
-    printf("(local) %s\n", gid);
+    printf("%s\n", GID);
 }
 
 /**
- * @brief Following this command the User application sends the DS
- * server a message in TCP asking for the list of user UIDs that are subscribed to
- * the currently subscribed group GID.
+ * @brief Lists all users subscribed to a group
  *
  */
-void ULS()
+void ulist()
 {
-    sprintf(command_buffer, "ULS %s\n", gid);
+    sprintf(COMMAND_BUFFER, "ULS %s\n", GID);
     sendCommandTCP();
-    printf("%s", response_buffer);
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
- * @brief Following this command the User establishes a
- * TCP session with the DS server and sends a message containing text (between
- * “ “), and possibly also a file with name Fname.
- * The confirmation of success (or not) should be displayed, including the posted
- * message’s ID MID. The TCP connection is then closed.
- *
+ * @brief Posts a message to a group
+ * 
  * @param message
  * @param fname
  */
-void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
+void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
 {
-    if (logged_in)
+    if (LOGGED_IN)
     {
         if (fname != NULL)
         {
@@ -450,10 +344,10 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
             fseek(FPtr, 0L, SEEK_END);
             long size = ftell(FPtr);
             rewind(FPtr);
-            sprintf(command_buffer, "PST %s %s %lu %s %s %lu ", uid, gid, strlen(message), message, basename(fname), size);
+            sprintf(COMMAND_BUFFER, "PST %s %s %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), size);
 
             int fd;
-            bzero(response_buffer, MAX_INPUT_SIZE);
+            bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
 
             if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
             {
@@ -470,14 +364,14 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
                 exit(EXIT_FAILURE);
             }
 
-            if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
+            if (connect(fd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
             {
                 close(fd);
                 fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
                 return;
             }
 
-            if (write(fd, command_buffer, strlen(command_buffer)) == -1)
+            if (write(fd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
             {
                 close(fd);
                 fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
@@ -498,8 +392,8 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
                     switch (errno)
                     {
                     case ECONNRESET:
-                        read(fd, response_buffer, MAX_INPUT_SIZE);
-                        printf("%s", response_buffer);
+                        read(fd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+                        printf("%s", RESPONSE_BUFFER);
                         break;
 
                     default:
@@ -513,7 +407,7 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
             }
 
             fclose(FPtr);
-            if (read(fd, response_buffer, MAX_INPUT_SIZE) == -1)
+            if (read(fd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
             {
                 close(fd);
                 fprintf(stderr, "Error receiving server's response.\n");
@@ -521,13 +415,13 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
             }
 
             close(fd);
-            printf("%s", response_buffer);
+            printf("%s", RESPONSE_BUFFER);
         }
         else
         {
-            sprintf(command_buffer, "PST %s %s %lu %s\n", uid, gid, strlen(message), message);
+            sprintf(COMMAND_BUFFER, "PST %s %s %lu %s\n", UID, GID, strlen(message), message);
             sendCommandTCP();
-            printf("%s", response_buffer);
+            printf("%s", RESPONSE_BUFFER);
         }
     }
     else
@@ -537,25 +431,17 @@ void PST(char *message, char *fname) /* TODO size não pode exceder tamanho */
 }
 
 /**
- * @brief Following this command the User establishes a
- * TCP session with the DS server and sends a message asking to receive up to 20
- * unread messages, starting with the one with identifier MID, for the active group
- * GID. The DS server only sends messages that include at least an author UID and
- * text – any incomplete messages are omitted.
- * After receiving the messages, the User application sends the DS a confirmation
- * and then closes the TCP session. The reply should be displayed as a numbered
- * list of text messages and, if available, the associated filenames and respective
- * sizes.
+ * @brief Retrieves messages from a group
  *
  * @param mid
  */
-void RTV(char *mid)
+void retrieve(char *mid)
 {
-    sprintf(command_buffer, "RTV %s %s %s\n", uid, gid, mid);
+    sprintf(COMMAND_BUFFER, "RTV %s %s %s\n", UID, GID, mid);
 
     int fd;
 
-    bzero(response_buffer, sizeof(response_buffer));
+    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
@@ -571,14 +457,14 @@ void RTV(char *mid)
         exit(EXIT_FAILURE);
     }
 
-    if (connect(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
+    if (connect(fd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
     {
         close(fd);
         fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
         return;
     }
 
-    if (write(fd, command_buffer, strlen(command_buffer)) == -1)
+    if (write(fd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(fd);
         fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
@@ -586,7 +472,7 @@ void RTV(char *mid)
     }
 
     int n;
-    if ((n = read(fd, response_buffer, 7)) == -1)
+    if ((n = read(fd, RESPONSE_BUFFER, 7)) == -1)
     {
         close(fd);
         fprintf(stderr, "Error receiving server's response.\n");
@@ -595,7 +481,7 @@ void RTV(char *mid)
     else
     {
         char op[4], status[4];
-        sscanf(response_buffer, "%s %s", op, status);
+        sscanf(RESPONSE_BUFFER, "%s %s", op, status);
 
         if (!strcmp(status, "OK"))
         {
@@ -619,7 +505,7 @@ void RTV(char *mid)
                 char mid[5], uid[6], tsize[4];
                 fscanf(TempFile, "%s %s %s", mid, uid, tsize);
                 char path_buffer[256];
-                sprintf(path_buffer, "GROUP%s_MSG%s.txt", gid, mid);
+                sprintf(path_buffer, "GROUP%s_MSG%s.txt", GID, mid);
                 FILE *MessageFile = fopen(path_buffer, "w");
                 bzero(data, 1024);
                 fgetc(TempFile);
@@ -661,7 +547,7 @@ void RTV(char *mid)
         }
         else
         {
-            printf(response_buffer);
+            printf(RESPONSE_BUFFER);
         }
     }
 

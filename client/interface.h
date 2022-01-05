@@ -1,7 +1,7 @@
 #ifndef CLIENT_CLIENT_INTERFACE_H
 #define CLIENT_CLIENT_INTERFACE_H
 
-/* Input */
+/* Input Commands */
 const char CMD_REGISTER[] = "reg";
 const char CMD_UNREGISTER[] = "unregister";
 const char CMD_UNREGISTER_SHORT[] = "unr";
@@ -16,7 +16,7 @@ const char CMD_SUBSCRIBE[] = "subscribe";
 const char CMD_SUBSCRIBE_SHORT[] = "s";
 const char CMD_UNSUBSCRIBE[] = "unsubscribe";
 const char CMD_UNSUBSCRIBE_SHORT[] = "u";
-const char CMD_MY_GROUPS[] = "mygroups";
+const char CMD_MY_GROUPS[] = "my_groups";
 const char CMD_MY_GROUPS_SHORT[] = "mgl";
 const char CMD_SELECT[] = "select";
 const char CMD_SELECT_SHORT[] = "sag";
@@ -28,7 +28,7 @@ const char CMD_POST[] = "post";
 const char CMD_RETRIEVE[] = "retrieve";
 const char CMD_RETRIEVE_SHORT[] = "r";
 
-/* Output */
+/* Output Messages */
 const char MSG_INVALID_IP[] = "Address isn't a valid IP, checking if it's a valid address\n";
 const char MSG_INVALID_PORT[] = "Invalid value for port argument\n";
 const char MSG_UNKNOWN_CMD[] = "Unknown command\n";

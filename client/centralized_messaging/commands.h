@@ -5,23 +5,23 @@
 int setupServerAddresses(char *ip, char *port);
 void freeServerAddress();
 
-/* Client local commands */
+/* Local commands */
 void showUID();
 void exitClient();
 void selectGroup(char *gid_arg);
 void showGID();
 
-/* Client Commands */
-int REG(char *uid_arg, char *pass_arg);
-void UNR(char *uid_arg, char *pass_arg);
-void LOG(char *uid_arg, char *pass_arg);
-void OUT();
-void GLS();
-void GSR(char *gid_arg, char *gid_name_arg);
-void GUR(char *gid_arg);
-void GLM();
-void ULS();
-void PST(char *message, char *fname);
-void RTV(char *mid);
+/* Client-Server Commands */
+void registerUser(char *uid_arg, char *pass_arg);
+void unregisterUser(char *uid_arg, char *pass_arg);
+void login(char *uid_arg, char *pass_arg);
+void logout();
+void groups();
+void subscribe(char *gid_arg, char *gid_name_arg);
+void unsubscribe(char *gid_arg);
+void myGroups();
+void ulist();
+void post(char *message, char *fname);
+void retrieve(char *mid);
 
 #endif //CENTRALIZED_MESSAGING_API_H
