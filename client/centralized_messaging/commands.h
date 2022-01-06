@@ -3,11 +3,10 @@
 
 /* Server Addresses (UDP and TCP) */
 int setupServerAddresses(char *ip, char *port);
-void freeServerAddress();
 
 /* Local commands */
 void showUID();
-void exitClient();
+void closeAllConnections();
 void selectGroup(char *gid_arg);
 void showGID();
 

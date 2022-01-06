@@ -17,13 +17,13 @@ bool VERBOSE;
 int TCPFD, UDPFD;
 fd_set RSET;
 
-void signalHandler(int signal_num);
+void exitClient(int signal_num);
 void loadInitArgs(int argc, char *argv[]);
 void readCommand();
 
 int main(int argc, char *argv[])
 {
-  signal(SIGTERM, signalHandler);
+  signal(SIGINT, exitClient);
 
   strcpy(PORT, DEFAULT_PORT);
   VERBOSE = false;
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
  * 
  * @param signal_num
  */
-void signalHandler(int signal_num)
+void exitClient(int signal_num)
 {
   close(TCPFD);
   close(UDPFD);

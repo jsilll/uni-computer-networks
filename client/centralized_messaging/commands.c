@@ -11,7 +11,7 @@
 #include "commands.h" // TODO remove unused imports, all files
 // TODO interface.h?
 
-bool LOGGED_IN = false;
+bool LOGGED_IN = false, GROUP_SELECTED = false;
 char UID[6], PASSWORD[9], GID[3];                // TODO 8 16 4
 char COMMAND_BUFFER[512], RESPONSE_BUFFER[3275]; // TODO 4096
 struct addrinfo *ADDR_UDP, *ADDR_TCP;
@@ -50,15 +50,6 @@ int setupServerAddresses(char *ip, char *port)
 }
 
 /**
- * @brief Frees the server adresses
- */
-void freeServerAddress()
-{
-    free(ADDR_UDP);
-    free(ADDR_TCP);
-}
-
-/**
  * @brief Sends a command to the server using UDP protocol
  *
  */
@@ -92,16 +83,17 @@ void sendCommandUDP()
 }
 
 /**
- * @brief Sends a command to the server using TCP protocol
- *
+ * @brief Opens a TCP socket
+ * 
+ * @return int 
  */
-void sendCommandTCP()
+int openTCPSocket()
 {
     int sockfd;
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         fprintf(stderr, "Error creating TCP socket.\n");
-        return;
+        return -1;
     }
 
     struct timeval tmout;
@@ -110,32 +102,17 @@ void sendCommandTCP()
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
     {
         fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
     {
         close(sockfd);
         fprintf(stderr, "connect(ADDR_TCP) failed.\n");
-        return;
+        return -1;
     }
 
-    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
-    {
-        close(sockfd);
-        fprintf(stderr, "write(COMMAND_BUFFER) failed.\n");
-        return;
-    }
-
-    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-    if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
-    {
-        close(sockfd);
-        fprintf(stderr, "read(RESPONSE_BUFFER) failed.\n");
-        return;
-    }
-
-    close(sockfd);
+    return sockfd;
 }
 
 /**
@@ -225,9 +202,15 @@ void showUID()
  * @brief Exits the client
  * 
  */
-void exitClient()
+void closeAllConnections()
 {
-    printf("[LOCAL] exit.\n"); // TODO, close all TCP connections
+    // TODO
+    // if (CONNECTED) {
+    //  close(SOCKFD)
+    // }
+    free(ADDR_UDP);
+    free(ADDR_TCP);
+    printf("[LOCAL] exit.\n");
 }
 
 /**
@@ -269,7 +252,7 @@ void unsubscribe(char *gid)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User need to be logged in.\n");
+        fprintf(stderr, "User needs to be logged in.\n");
         return;
     }
 
@@ -296,8 +279,9 @@ void myGroups()
  */
 void selectGroup(char *gid)
 {
-    strcpy(GID, gid);
-    printf("[LOCAL] %s is now selected.\n", gid);
+    GROUP_SELECTED = true;
+    strncpy(GID, gid, sizeof(GID) - 1);
+    printf("[LOCAL] %s is now selected.\n", GID);
 }
 
 /**
@@ -305,7 +289,14 @@ void selectGroup(char *gid)
  */
 void showGID()
 {
-    printf("[LOCAL] GID: %s\n", GID);
+    if (!GROUP_SELECTED)
+    {
+        printf("[LOCAL] GID not selected.\n");
+    }
+    else
+    {
+        printf("[LOCAL] GID: %s\n", GID);
+    }
 }
 
 /**
@@ -315,8 +306,32 @@ void showGID()
 void ulist()
 {
     sprintf(COMMAND_BUFFER, "ULS %s\n", GID);
-    sendCommandTCP();
-    printf("%s", RESPONSE_BUFFER);
+
+    int sockfd;
+    if ((sockfd = openTCPSocket()) == -1)
+    {
+        return;
+    }
+
+    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Couldn't send command_buffer.\n");
+        return;
+    }
+
+    int n;
+    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+    while ((n = read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER))) > 0)
+    {
+        printf("%s", RESPONSE_BUFFER);
+    }
+
+    if (n == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Error receiving server's response.\n");
+    }
 }
 
 /**
@@ -329,14 +344,40 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User need to be logged in.\n");
+        fprintf(stderr, "User needs to be logged in.\n");
+        return;
+    }
+
+    if (!GROUP_SELECTED)
+    {
+        fprintf(stderr, "Group needs to be selected.\n");
+        return;
+    }
+
+    int sockfd;
+    if ((sockfd = openTCPSocket()) == -1)
+    {
         return;
     }
 
     if (fname == NULL)
     {
         sprintf(COMMAND_BUFFER, "PST %s %s %lu %s\n", UID, GID, strlen(message), message);
-        sendCommandTCP();
+        if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+        {
+            close(sockfd);
+            fprintf(stderr, "Couldn't send command_buffer.\n");
+            return;
+        }
+
+        bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+        if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+        {
+            close(sockfd);
+            fprintf(stderr, "Error receiving server's response.\n");
+            return;
+        }
+
         printf("%s", RESPONSE_BUFFER);
         return;
     }
@@ -352,31 +393,7 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
     long fsize = ftell(fptr);
     rewind(fptr);
     sprintf(COMMAND_BUFFER, "PST %s %s %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), fsize);
-
-    int sockfd;
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-        fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
-        return;
-    }
-
-    struct timeval tmout; // TODO
-    memset((char *)&tmout, 0, sizeof(tmout));
-    tmout.tv_sec = 15;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
-    {
-        close(sockfd);
-        fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-        return;
-    }
-
-    if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
-    {
-        close(sockfd);
-        fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
-        return;
-    }
-
+    printf("%s", COMMAND_BUFFER);
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(sockfd);
@@ -395,7 +412,12 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
             {
             case ECONNRESET:
                 bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-                read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+                if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+                {
+                    close(sockfd);
+                    fprintf(stderr, "Error receiving server's response.\n");
+                    return;
+                }
                 printf("%s", RESPONSE_BUFFER);
                 break;
 
@@ -441,31 +463,19 @@ void retrieve(char *mid)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User need to be logged in.\n");
+        fprintf(stderr, "User needs to be logged in.\n");
+        return;
+    }
+
+    if (!GROUP_SELECTED)
+    {
+        fprintf(stderr, "Group needs to be selected.\n");
         return;
     }
 
     int sockfd;
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((sockfd = openTCPSocket()) == -1)
     {
-        fprintf(stderr, "Error creating TCP socket.\n");
-        return;
-    }
-
-    struct timeval tmout; // TODO
-    memset((char *)&tmout, 0, sizeof(tmout));
-    tmout.tv_sec = 15;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
-    {
-        close(sockfd);
-        fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-        return;
-    }
-
-    if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
-    {
-        close(sockfd);
-        fprintf(stderr, "connect(ADDR_TCP) failed.\n");
         return;
     }
 
@@ -502,6 +512,14 @@ void retrieve(char *mid)
     {
         fwrite(file_buffer, sizeof(char), bytes_read, tmpfptr);
     }
+
+    if (bytes_read == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Error receiving server's response.\n");
+        return;
+    }
+
     rewind(tmpfptr);
 
     int n_msg;

@@ -16,14 +16,14 @@
 
 char PORT[6], ADDRESS[INET6_ADDRSTRLEN];
 
-void signalHandler(int signum);
+void exitClient(int signum);
 void getLocalHostAddr();
 void loadInitArgs(int argc, char *argv[]);
 void execCommand(char *line);
 
 int main(int argc, char *argv[])
 {
-  signal(SIGTERM, signalHandler);
+  signal(SIGINT, exitClient);
 
   strcpy(PORT, DEFAULT_PORT);
   getLocalHostAddr();
@@ -49,10 +49,9 @@ int main(int argc, char *argv[])
  * @brief Signal Handler for terminating the client
  * @param signum
  */
-void signalHandler(int signum)
+void exitClient(int signum)
 {
-  // TODO close all TCP connections
-  freeServerAddress();
+  closeAllConnections();
   exit(signum);
 }
 
@@ -175,7 +174,7 @@ void execCommand(char *line)
       }
       else if (!strcmp(op, CMD_EXIT))
       {
-        exitClient();
+        exitClient(EXIT_SUCCESS);
       }
       else if (!strcmp(op, CMD_GROUPS) || !strcmp(op, CMD_GROUPS_SHORT))
       {
