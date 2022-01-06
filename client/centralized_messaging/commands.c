@@ -158,6 +158,11 @@ void unregisterUser(char *uid, char *password)
     sprintf(COMMAND_BUFFER, "UNR %s %s\n", uid, password);
     sendCommandUDP();
     printf("%s", RESPONSE_BUFFER);
+
+    if (LOGGED_IN && !strcmp(uid, UID) && !strcmp(password, PASSWORD))
+    {
+        LOGGED_IN = false;
+    }
 }
 
 /**
@@ -347,6 +352,7 @@ void ulist()
     while ((n = read(SOCKFD, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER))) > 0)
     {
         printf("%s", RESPONSE_BUFFER);
+        bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
     }
 
     if (n == -1)
@@ -411,12 +417,12 @@ void post(char *message, char *fname)
         fprintf(stderr, "File does not exist.\n");
         return;
     }
-
     fseek(fptr, 0L, SEEK_END);
     long fsize = ftell(fptr);
     rewind(fptr);
+
     sprintf(COMMAND_BUFFER, "PST %s %s %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), fsize);
-    printf("%s", COMMAND_BUFFER);
+    printf("%s\n", COMMAND_BUFFER);
     if (write(SOCKFD, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(SOCKFD);
@@ -530,11 +536,12 @@ void retrieve(char *mid)
 
     int bytes_read;
     char file_buffer[1024];
-    bzero(file_buffer, 1024);
+    bzero(file_buffer, sizeof(file_buffer));
     FILE *tmpfptr = fopen("temp.bin", "wb+");
     while ((bytes_read = read(SOCKFD, file_buffer, sizeof(file_buffer))) > 0)
     {
         fwrite(file_buffer, sizeof(char), bytes_read, tmpfptr);
+        bzero(file_buffer, sizeof(file_buffer));
     }
 
     if (bytes_read == -1)
@@ -568,9 +575,14 @@ void retrieve(char *mid)
         fwrite(file_buffer, sizeof(char), atoi(tsize), msgfptr);
         fclose(msgfptr);
 
-        fgetc(tmpfptr);
-        char c = fgetc(tmpfptr);
-        if (c != '/')
+        if (fgetc(tmpfptr) == '\n')
+        {
+            printf("\n");
+            break;
+        }
+
+        char c;
+        if ((c = fgetc(tmpfptr)) != '/')
         {
             fseek(tmpfptr, -1L, SEEK_CUR);
         }
@@ -596,7 +608,6 @@ void retrieve(char *mid)
         }
 
         printf("\n");
-
         bzero(file_buffer, sizeof(file_buffer));
     }
 

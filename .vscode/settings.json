@@ -12,6 +12,7 @@
         "numeric": "c",
         "netdb.h": "c",
         "connection.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "stdlib.h": "c"
     }
 }
