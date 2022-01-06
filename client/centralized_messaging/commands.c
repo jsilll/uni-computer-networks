@@ -14,6 +14,7 @@ bool LOGGED_IN = false;
 char UID[6], PASSWORD[9], GID[3];                // TODO 8 16 4
 char COMMAND_BUFFER[512], RESPONSE_BUFFER[3275]; // TODO 4096
 struct addrinfo *ADDR_UDP, *ADDR_TCP;
+// TODO unecessarily large bzeros
 
 /**
  * @brief Sets up the UDP socket
@@ -59,7 +60,6 @@ void freeServerAddress()
 /**
  * @brief Sends a command to the server using UDP protocol
  *
- * @param command_buffer
  */
 void sendCommandUDP()
 {
@@ -93,8 +93,6 @@ void sendCommandUDP()
 /**
  * @brief Sends a command to the server using TCP protocol
  *
- * @param command_buffer
- * @param response_buffer
  */
 void sendCommandTCP()
 {
@@ -108,7 +106,7 @@ void sendCommandTCP()
     struct timeval tmout;
     memset((char *)&tmout, 0, sizeof(tmout));
     tmout.tv_sec = 15;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
     {
         fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
         exit(EXIT_FAILURE);
@@ -193,18 +191,17 @@ void logout()
     if (!LOGGED_IN)
     {
         fprintf(stderr, "User needs to be logged in.\n");
+        return;
     }
-    else
+
+    sprintf(COMMAND_BUFFER, "OUT %s %s\n", UID, PASSWORD);
+    sendCommandUDP();
+    printf("%s", RESPONSE_BUFFER);
+    if (!strcmp(RESPONSE_BUFFER, "ROU OK\n"))
     {
-        sprintf(COMMAND_BUFFER, "OUT %s %s\n", UID, PASSWORD);
-        sendCommandUDP();
-        printf("%s", RESPONSE_BUFFER);
-        if (!strcmp(RESPONSE_BUFFER, "ROU OK\n"))
-        {
-            LOGGED_IN = false;
-            bzero(UID, sizeof(UID));
-            bzero(PASSWORD, sizeof(PASSWORD));
-        }
+        LOGGED_IN = false;
+        bzero(UID, sizeof(UID));
+        bzero(PASSWORD, sizeof(PASSWORD));
     }
 }
 
@@ -217,11 +214,10 @@ void showUID()
     if (!LOGGED_IN)
     {
         fprintf(stderr, "User needs to be logged in.\n");
+        return;
     }
-    else
-    {
-        printf("[LOCAL] UID: %s\n", UID);
-    }
+
+    printf("[LOCAL] UID: %s\n", UID);
 }
 
 /**
@@ -255,13 +251,12 @@ void subscribe(char *gid, char *gname)
     if (!LOGGED_IN)
     {
         fprintf(stderr, "User needs to be logged in.\n");
+        return;
     }
-    else
-    {
-        sprintf(COMMAND_BUFFER, "GSR %s %s %s\n", UID, gid, gname);
-        sendCommandUDP();
-        printf("%s", RESPONSE_BUFFER);
-    }
+
+    sprintf(COMMAND_BUFFER, "GSR %s %s %s\n", UID, gid, gname);
+    sendCommandUDP();
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
@@ -274,13 +269,12 @@ void unsubscribe(char *gid)
     if (!LOGGED_IN)
     {
         fprintf(stderr, "User need to be logged in.\n");
+        return;
     }
-    else
-    {
-        sprintf(COMMAND_BUFFER, "GUR %s %s\n", UID, gid);
-        sendCommandUDP();
-        printf("%s", RESPONSE_BUFFER);
-    }
+
+    sprintf(COMMAND_BUFFER, "GUR %s %s\n", UID, gid);
+    sendCommandUDP();
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
@@ -335,102 +329,106 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
     if (!LOGGED_IN)
     {
         fprintf(stderr, "User need to be logged in.\n");
+        return;
     }
-    else
+
+    if (fname == NULL)
     {
-        if (fname != NULL)
-        {
-            FILE *FPtr = fopen(fname, "rb");
-            if (FPtr == NULL)
-            {
-                fprintf(stderr, "Couldn't open file. File does not exist.\n");
-                return;
-            }
-
-            fseek(FPtr, 0L, SEEK_END);
-            long size = ftell(FPtr);
-            rewind(FPtr);
-            sprintf(COMMAND_BUFFER, "PST %s %s %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), size);
-
-            int fd;
-            bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-
-            if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-            {
-                fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
-                return;
-            }
-
-            struct timeval tmout;
-            memset((char *)&tmout, 0, sizeof(tmout));
-            tmout.tv_sec = 15;
-            if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
-            {
-                fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-                exit(EXIT_FAILURE);
-            }
-
-            if (connect(fd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
-            {
-                close(fd);
-                fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
-                return;
-            }
-
-            if (write(fd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
-            {
-                close(fd);
-                fprintf(stderr, "Couldn't send command_buffer.\n");
-                return;
-            }
-
-            char data[1024];
-            bzero(data, sizeof(data));
-            int bytes_read;
-            while ((bytes_read = fread(data, 1, sizeof(data), FPtr)) > 0)
-            {
-                if (write(fd, data, bytes_read) == -1)
-                {
-                    // Ler o RPT NOK
-                    switch (errno)
-                    {
-                    case ECONNRESET:
-                        read(fd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-                        printf("%s", RESPONSE_BUFFER);
-                        break;
-
-                    default:
-                        fprintf(stderr, "Couldn't send file: %s.\n", strerror(errno));
-                        break;
-                    }
-                    close(fd);
-                    return;
-                }
-                bzero(data, sizeof(data));
-            }
-            fclose(FPtr);
-            if (write(fd, "\n", 1) == -1)
-            {
-                fprintf(stderr, "Couldn't send file %s.\n", strerror(errno));
-            }
-
-            if (read(fd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
-            {
-                close(fd);
-                fprintf(stderr, "Error receiving server's response.\n");
-                return;
-            }
-
-            close(fd);
-            printf("%s", RESPONSE_BUFFER);
-        }
-        else
-        {
-            sprintf(COMMAND_BUFFER, "PST %s %s %lu %s\n", UID, GID, strlen(message), message);
-            sendCommandTCP();
-            printf("%s", RESPONSE_BUFFER);
-        }
+        sprintf(COMMAND_BUFFER, "PST %s %s %lu %s\n", UID, GID, strlen(message), message);
+        sendCommandTCP();
+        printf("%s", RESPONSE_BUFFER);
+        return;
     }
+
+    FILE *fptr = fopen(fname, "rb");
+    if (fptr == NULL)
+    {
+        fprintf(stderr, "File does not exist.\n");
+        return;
+    }
+
+    fseek(fptr, 0L, SEEK_END);
+    long fsize = ftell(fptr);
+    rewind(fptr);
+    sprintf(COMMAND_BUFFER, "PST %s %s %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), fsize);
+
+    int sockfd;
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        fprintf(stderr, "Couldn't send command_buffer. Error creating TCP socket.\n");
+        return;
+    }
+
+    struct timeval tmout; // TODO
+    memset((char *)&tmout, 0, sizeof(tmout));
+    tmout.tv_sec = 15;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+        return;
+    }
+
+    if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Couldn't send command_buffer. Error establishing a connection with server.\n");
+        return;
+    }
+
+    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Couldn't send command_buffer.\n");
+        return;
+    }
+
+    int bytes_read;
+    char file_buffer[1024];
+    bzero(file_buffer, sizeof(file_buffer));
+    while ((bytes_read = fread(file_buffer, 1, sizeof(file_buffer), fptr)) > 0)
+    {
+        if (write(sockfd, file_buffer, bytes_read) == -1)
+        {
+            switch (errno)
+            {
+            case ECONNRESET:
+                bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+                read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+                printf("%s", RESPONSE_BUFFER);
+                break;
+
+            default:
+                fprintf(stderr, "Couldn't send file: %s.\n", strerror(errno));
+                break;
+            }
+
+            close(sockfd);
+            return;
+        }
+
+        bzero(file_buffer, sizeof(file_buffer));
+    }
+
+    fclose(fptr);
+
+    if (write(sockfd, "\n", 1) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Couldn't send '\\n' after file: %s.\n", strerror(errno));
+        return;
+    }
+
+    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+    if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Error receiving server's response.\n");
+        return;
+    }
+
+    close(sockfd);
+    printf("%s", RESPONSE_BUFFER);
 }
 
 /**
@@ -443,123 +441,123 @@ void retrieve(char *mid)
     if (!LOGGED_IN)
     {
         fprintf(stderr, "User need to be logged in.\n");
+        return;
     }
-    else
+
+    int sockfd;
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
-        sprintf(COMMAND_BUFFER, "RTV %s %s %s\n", UID, GID, mid);
+        fprintf(stderr, "Error creating TCP socket.\n");
+        return;
+    }
 
-        int fd;
+    struct timeval tmout; // TODO
+    memset((char *)&tmout, 0, sizeof(tmout));
+    tmout.tv_sec = 15;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+        return;
+    }
 
-        bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-        if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "connect(ADDR_TCP) failed.\n");
+        return;
+    }
+
+    sprintf(COMMAND_BUFFER, "RTV %s %s %s\n", UID, GID, mid);
+    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Couldn't send command_buffer.\n");
+        return;
+    }
+
+    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+    if (read(sockfd, RESPONSE_BUFFER, 7) == -1)
+    {
+        close(sockfd);
+        fprintf(stderr, "Error receiving server's response.\n");
+        return;
+    }
+
+    char op[4], status[4];
+    sscanf(RESPONSE_BUFFER, "%s %s", op, status);
+    if (strcmp(status, "OK"))
+    {
+        close(sockfd);
+        printf("%s", RESPONSE_BUFFER);
+        return;
+    }
+
+    int bytes_read;
+    char file_buffer[1024];
+    bzero(file_buffer, 1024);
+    FILE *tmpfptr = fopen("temp.bin", "wb+");
+    while ((bytes_read = read(sockfd, file_buffer, sizeof(file_buffer))) > 0)
+    {
+        fwrite(file_buffer, sizeof(char), bytes_read, tmpfptr);
+    }
+    rewind(tmpfptr);
+
+    int n_msg;
+    fscanf(tmpfptr, "%d ", &n_msg);
+    printf("%s %s %d\n", op, status, n_msg);
+
+    for (int i = 0; i < n_msg; i++)
+    {
+        char curr_mid[5], uid[6], tsize[4];
+        fscanf(tmpfptr, "%4s %5s %3s", curr_mid, uid, tsize);
+
+        char path_buffer[256];
+        sprintf(path_buffer, "GROUP%s_MSG%s.txt", GID, curr_mid);
+        FILE *msgfptr = fopen(path_buffer, "w");
+
+        fgetc(tmpfptr);
+        bzero(file_buffer, 1024);
+        fread(file_buffer, sizeof(char), atoi(tsize), tmpfptr);
+
+        printf("%s", file_buffer);
+
+        fwrite(file_buffer, sizeof(char), atoi(tsize), msgfptr);
+        fclose(msgfptr);
+
+        fgetc(tmpfptr);
+        char c = fgetc(tmpfptr);
+        if (c != '/')
         {
-            fprintf(stderr, "Error creating TCP socket.\n");
-            return;
-        }
-
-        struct timeval tmout;
-        memset((char *)&tmout, 0, sizeof(tmout));
-        tmout.tv_sec = 15;
-        if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
-        {
-            fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-            exit(EXIT_FAILURE);
-        }
-
-        if (connect(fd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
-        {
-            close(fd);
-            fprintf(stderr, "connect(ADDR_TCP) failed.\n");
-            return;
-        }
-
-        if (write(fd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
-        {
-            close(fd);
-            fprintf(stderr, "Couldn't send command_buffer.\n");
-            return;
-        }
-
-        int n;
-        if ((n = read(fd, RESPONSE_BUFFER, 7)) == -1)
-        {
-            close(fd);
-            fprintf(stderr, "Error receiving server's response.\n");
-            return;
+            fseek(tmpfptr, -1L, SEEK_CUR);
         }
         else
         {
-            char op[4], status[4];
-            sscanf(RESPONSE_BUFFER, "%s %s", op, status);
+            fgetc(tmpfptr);
 
-            if (!strcmp(status, "OK"))
+            char fname[25], fsize[11];
+            fscanf(tmpfptr, "%24s %10s", fname, fsize);
+
+            printf(" %s %s", fname, fsize);
+
+            fgetc(tmpfptr);
+            int iter = atoi(fsize);
+            FILE *datafptr = fopen(fname, "wb");
+            for (int j = 0; j < iter; j += 1024)
             {
-                char data[1024];
-                bzero(data, 1024);
-
-                FILE *TempFile = fopen("temp.bin", "wb+");
-                while ((n = read(fd, data, 1024)) > 0)
-                {
-                    fwrite(data, sizeof(char), n, TempFile);
-                }
-                rewind(TempFile);
-
-                char n_msg[3];
-                fscanf(TempFile, "%s ", n_msg);
-                int num_msg = atoi(n_msg);
-                printf("%s %s %d\n", op, status, num_msg);
-
-                for (int i = 0; i < num_msg; i++)
-                {
-                    char mid[5], uid[6], tsize[4];
-                    fscanf(TempFile, "%s %s %s", mid, uid, tsize);
-                    char path_buffer[256];
-                    sprintf(path_buffer, "GROUP%s_MSG%s.txt", GID, mid);
-                    FILE *MessageFile = fopen(path_buffer, "w");
-                    bzero(data, 1024);
-                    fgetc(TempFile);
-                    fread(data, sizeof(char), atoi(tsize), TempFile);
-                    printf("%s", data);
-                    fwrite(data, sizeof(char), atoi(tsize), MessageFile);
-                    fclose(MessageFile);
-
-                    fgetc(TempFile);
-                    char c = fgetc(TempFile);
-                    if (c == '/')
-                    {
-                        char fname[25], fsize[11];
-                        fgetc(TempFile);
-                        fscanf(TempFile, "%s %s", fname, fsize);
-                        printf(" %s", fname);
-                        fgetc(TempFile);
-                        FILE *DataFile = fopen(fname, "wb");
-                        int iter = atoi(fsize);
-
-                        for (int j = 0; j < iter; j += 1024)
-                        {
-                            size_t size = fread(data, sizeof(char), ((1024) < (iter - j)) ? (1024) : (iter - j), TempFile);
-                            fwrite(data, sizeof(char), size, DataFile);
-                        }
-                        fclose(DataFile);
-                    }
-                    else
-                    {
-                        fseek(TempFile, -1L, SEEK_CUR);
-                    }
-
-                    printf("\n");
-                    bzero(data, 1024);
-                }
-
-                fclose(TempFile);
-                unlink("temp.bin");
+                size_t size = fread(file_buffer, sizeof(char), ((1024) < (iter - j)) ? (1024) : (iter - j), tmpfptr);
+                fwrite(file_buffer, sizeof(char), size, datafptr);
             }
-            else
-            {
-                printf(RESPONSE_BUFFER);
-            }
+
+            fclose(datafptr);
         }
 
-        close(fd);
+        printf("\n");
+
+        bzero(file_buffer, sizeof(file_buffer));
     }
+
+    fclose(tmpfptr);
+    unlink("temp.bin");
+    close(sockfd);
 }
