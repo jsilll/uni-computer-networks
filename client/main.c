@@ -14,7 +14,7 @@
 #define DEFAULT_PORT "58006"
 #define MAX_INPUT_SIZE 240 + 32
 
-char PORT[6], ADDRESS[32];
+char PORT[6], ADDRESS[INET6_ADDRSTRLEN];
 
 void signalHandler(int signum);
 void getLocalHostAddr();
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
   printf("Centralized Messaging Client\n");
   printf("ADDRESS:%s PORT:%s\n", ADDRESS, PORT);
 
-  if (setupServerAddresses(ADDRESS, PORT) != 0)
+  if (setupServerAddresses(ADDRESS, PORT) == -1)
   {
     exit(EXIT_FAILURE);
   }

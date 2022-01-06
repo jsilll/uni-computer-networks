@@ -20,6 +20,7 @@ void parseIPArg(char *ip)
   {
     fprintf(stderr, MSG_INVALID_IP);
   }
+  // exit(EXIT_FAILURE)
 }
 
 /**

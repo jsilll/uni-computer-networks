@@ -9,6 +9,7 @@
 #include <libgen.h>
 #include <errno.h>
 #include "commands.h" // TODO remove unused imports, all files
+// TODO interface.h?
 
 bool LOGGED_IN = false;
 char UID[6], PASSWORD[9], GID[3];                // TODO 8 16 4
