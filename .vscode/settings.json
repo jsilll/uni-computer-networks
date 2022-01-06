@@ -10,6 +10,7 @@
         "istream": "c",
         "limits": "c",
         "numeric": "c",
-        "netdb.h": "c"
+        "netdb.h": "c",
+        "connection.h": "c"
     }
 }

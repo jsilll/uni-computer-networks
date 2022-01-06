@@ -546,7 +546,7 @@ void retrieve(char *mid)
             FILE *datafptr = fopen(fname, "wb");
             for (int j = 0; j < iter; j += 1024)
             {
-                size_t size = fread(file_buffer, sizeof(char), ((1024) < (iter - j)) ? (1024) : (iter - j), tmpfptr);
+                size_t size = fread(file_buffer, sizeof(char), (((1024) < (iter - j)) ? (1024) : (iter - j)), tmpfptr);
                 fwrite(file_buffer, sizeof(char), size, datafptr);
             }
 

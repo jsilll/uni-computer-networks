@@ -6,45 +6,42 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <signal.h>
-
 #include "parsing.h"
 #include "connection.h"
 #include "command_handling.h"
 
 #define DEFAULT_PORT "58006"
 
-#define max(x, y) (x > y ? x : y)
+char PORT[6];
+bool VERBOSE;
+int TCPFD, UDPFD;
+fd_set RSET;
 
-char PORT[MAX_INPUT_SIZE];
-bool VERBOSE = false;
-
-fd_set rset;
-int listenfd, udpfd;
-
-void signal_handler(int signal_num);
+void signalHandler(int signal_num);
 void loadInitArgs(int argc, char *argv[]);
 void readCommand();
 
 int main(int argc, char *argv[])
 {
-  signal(SIGTERM, signal_handler);
+  signal(SIGTERM, signalHandler);
 
   strcpy(PORT, DEFAULT_PORT);
+  VERBOSE = false;
   loadInitArgs(argc, argv);
 
   printf("Centralized Messaging Server\n");
   printf("PORT %s VERBOSE %s\n", PORT, VERBOSE ? "On" : "Off");
 
   setupAddresses(PORT);
-  listenfd = openSocket(SOCK_STREAM);
-  if (listen(listenfd, 5) < 0)
+  UDPFD = openSocket(SOCK_DGRAM);
+  TCPFD = openSocket(SOCK_STREAM);
+  if (listen(TCPFD, 5) == -1)
   {
-    fprintf(stderr, "Error on listen()\n");
+    fprintf(stderr, "Error on listen(TCPFD)\n");
     exit(EXIT_FAILURE);
   }
-  udpfd = openSocket(SOCK_DGRAM);
 
-  FD_ZERO(&rset);
+  FD_ZERO(&RSET);
   for (;;)
   {
     readCommand();
@@ -52,18 +49,21 @@ int main(int argc, char *argv[])
 }
 
 /**
- * Signal Handler for terminating the server
+ * @brief Signal Handler for terminating the server
+ * 
  * @param signal_num
  */
-void signal_handler(int signal_num)
+void signalHandler(int signal_num)
 {
-  close(listenfd);
-  close(udpfd);
+  close(TCPFD);
+  close(UDPFD);
+  freeAddresses();
   exit(signal_num);
 }
 
 /**
- * Parses the initial arguments for the program.
+ * @brief Parses the initial arguments for the program.
+ * 
  * @param argc number of arguments in argv
  * @param argv array passed arguments
  */
@@ -101,23 +101,31 @@ void loadInitArgs(int argc, char *argv[])
 }
 
 /**
- * Reads commands from udp and tcp clients
+ * @brief Reads commands from udp and tcp clients
+ * 
  */
 void readCommand()
 {
-  FD_SET(listenfd, &rset);
-  FD_SET(udpfd, &rset);
-  select(max(listenfd, udpfd) + 1, &rset, NULL, NULL, NULL);
+  FD_SET(TCPFD, &RSET);
+  FD_SET(UDPFD, &RSET);
+  select(((TCPFD > UDPFD) ? TCPFD : UDPFD) + 1, &RSET, NULL, NULL, NULL);
 
   struct sockaddr_in cliaddr;
-  if (FD_ISSET(listenfd, &rset))
+  if (FD_ISSET(TCPFD, &RSET))
   {
     socklen_t len = sizeof(cliaddr);
-    int connfd = accept(listenfd, (struct sockaddr *)&cliaddr, &len);
+    int connfd = accept(TCPFD, (struct sockaddr *)&cliaddr, &len);
 
-    if (fork() == 0)
+    if (fork() != 0)
     {
+      close(connfd);
+    }
+    else
+    {
+      close(TCPFD);
+      close(UDPFD);
 
+      // TODO
       // struct timeval tmout;
       // memset((char *)&tmout, 0, sizeof(tmout));
       // tmout.tv_sec = 15;
@@ -127,6 +135,7 @@ void readCommand()
       //   exit(EXIT_FAILURE);
       // }
 
+      // TODO
       // memset((char *)&tmout, 0, sizeof(tmout));
       // tmout.tv_sec = 15;
       // if (setsockopt(connfd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
@@ -135,22 +144,19 @@ void readCommand()
       //   exit(EXIT_FAILURE);
       // }
 
-      close(listenfd);
-      close(udpfd);
       if (VERBOSE)
       {
         printf("[TCP] IP: %s PORT: %lu ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
       }
+
       handleTCPCommand(connfd, VERBOSE);
       close(connfd);
       exit(EXIT_SUCCESS);
     }
-
-    close(connfd);
   }
 
-  if (FD_ISSET(udpfd, &rset))
+  if (FD_ISSET(UDPFD, &RSET))
   {
-    handleCommandUDP(udpfd, cliaddr, VERBOSE);
+    handleCommandUDP(UDPFD, cliaddr, VERBOSE);
   }
 }

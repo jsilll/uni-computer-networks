@@ -7,35 +7,56 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-struct addrinfo *address_tcp, *address_udp;
+struct addrinfo *ADDR_TCP, *ADDR_UDP; // TODO put in connection.c
 
+/**
+ * @brief Sets up the server addresses for 
+ * establishing TCP and UDP connections
+ * 
+ * @param PORT 
+ */
 void setupAddresses(char *PORT)
 {
   struct addrinfo hints;
-  int errcode;
   memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_INET;       // IPv4
-  hints.ai_socktype = SOCK_STREAM; // TCP Socket
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  if ((errcode = getaddrinfo(NULL, PORT, &hints, &address_tcp)) != 0)
+  int errcode;
+  if ((errcode = getaddrinfo(NULL, PORT, &hints, &ADDR_TCP)) != 0)
   {
     fprintf(stderr, "Error on getaddrinfo (tcp): %s\n", gai_strerror(errcode));
     exit(EXIT_FAILURE);
   }
 
-  hints.ai_socktype = SOCK_DGRAM; // TCP Socket
-  if ((errcode = getaddrinfo(NULL, PORT, &hints, &address_udp)) != 0)
+  hints.ai_socktype = SOCK_DGRAM;
+  if ((errcode = getaddrinfo(NULL, PORT, &hints, &ADDR_UDP)) != 0)
   {
     fprintf(stderr, "Error on getaddrinfo (udp): %s", gai_strerror(errcode));
     exit(EXIT_FAILURE);
   }
 }
 
+/**
+ * @brief Frees the server addresses
+ * 
+ */
+void freeAddresses()
+{
+  free(ADDR_TCP);
+  free(ADDR_UDP);
+}
+
+/**
+ * @brief Opens a socket
+ * 
+ * @param type 
+ * @return int 
+ */
 int openSocket(int type)
 {
   int fd;
-
   if ((fd = socket(AF_INET, type, 0)) < 0)
   {
     fprintf(stderr, "Error opening socket.\n");
@@ -51,7 +72,7 @@ int openSocket(int type)
   switch (type)
   {
   case SOCK_DGRAM:
-    if (bind(fd, address_udp->ai_addr, address_udp->ai_addrlen) == -1)
+    if (bind(fd, ADDR_UDP->ai_addr, ADDR_UDP->ai_addrlen) == -1)
     {
       fprintf(stderr, "Error binding socket\n");
       exit(EXIT_FAILURE);
@@ -59,7 +80,7 @@ int openSocket(int type)
     break;
 
   case SOCK_STREAM:
-    if (bind(fd, address_tcp->ai_addr, address_tcp->ai_addrlen) == -1)
+    if (bind(fd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
     {
       fprintf(stderr, "Error binding socket\n");
       exit(EXIT_FAILURE);
@@ -69,6 +90,7 @@ int openSocket(int type)
   default:
     fd = -1;
   }
+
   return fd;
 }
 

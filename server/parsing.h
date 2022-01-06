@@ -4,7 +4,8 @@
 #include <stdio.h>
 
 /**
- * Validates the port option argument.
+ * @brief Validates the port option argument.
+ * 
  * @param port port argument in string format
  */
 void parsePortArg(char *port)
