@@ -115,7 +115,7 @@ int GLS(char *buffer)
 int GSR(char *uid, char *gid, char *gname)
 {
   char path_buffer[256];
-  if (atoi(gid) > n_groups)
+  if (atoi(gid) > n_groups || atoi(gid) == 0)
     return -1; // E_NOK
 
   if (!strcmp(gid, "0"))
@@ -157,7 +157,7 @@ int GSR(char *uid, char *gid, char *gname)
  */
 int GUR(char *uid, char *gid)
 {
-  if (atoi(gid) > n_groups)
+  if (atoi(gid) > n_groups || atoi(gid) == 0)
     return -1; // E_NOK
 
   char path_buffer[256];
@@ -189,7 +189,7 @@ int GLM(char *uid, char *buffer)
  */
 int ULS(char *gid, char *buffer)
 {
-  if (atoi(gid) > n_groups)
+  if (atoi(gid) > n_groups || atoi(gid) == 0)
   {
     strcpy(buffer, "RUL NOK\n");
     return 0;
@@ -241,7 +241,7 @@ FILE *PST(char *uid, char *gid, char *text, char *fname, char *mid)
   char path_buffer[256];
 
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s.txt", gid, uid);
-  if (n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
+  if (atoi(gid) == 0 || n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
   {
     return NULL;
   }
@@ -285,7 +285,7 @@ int RTV(char *uid, char *gid, char *mid)
 {
   char path_buffer[256];
   sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s.txt", gid, uid);
-  if (n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
+  if (atoi(gid) == 0 || n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
   {
     return -1;
   }

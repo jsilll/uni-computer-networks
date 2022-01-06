@@ -11,9 +11,10 @@
 #include "commands.h" // TODO remove unused imports, all files
 // TODO interface.h?
 
-bool LOGGED_IN = false, GROUP_SELECTED = false;
+bool LOGGED_IN = false, GROUP_SELECTED = false, CONNECTED = false;
 char UID[6], PASSWORD[9], GID[3];                // TODO 8 16 4
-char COMMAND_BUFFER[512], RESPONSE_BUFFER[3275]; // TODO 4096
+char COMMAND_BUFFER[512], RESPONSE_BUFFER[3175]; // TODO 4096
+int SOCKFD;
 struct addrinfo *ADDR_UDP, *ADDR_TCP;
 // TODO unecessarily large bzeros
 
@@ -55,16 +56,17 @@ int setupServerAddresses(char *ip, char *port)
  */
 void sendCommandUDP()
 {
-    int sockfd;
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+    if ((SOCKFD = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
     {
         fprintf(stderr, "Error creating UDP socket.\n");
         return;
     }
 
-    if (sendto(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER), 0, ADDR_UDP->ai_addr, ADDR_UDP->ai_addrlen) == -1)
+    CONNECTED = true;
+
+    if (sendto(SOCKFD, COMMAND_BUFFER, strlen(COMMAND_BUFFER), 0, ADDR_UDP->ai_addr, ADDR_UDP->ai_addrlen) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "sendto(COMMAND_BUFFER) failed.\n");
         return;
     }
@@ -72,14 +74,15 @@ void sendCommandUDP()
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
     bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-    if (recvfrom(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER), 0, (struct sockaddr *)&addr, &addrlen) == -1)
+    if (recvfrom(SOCKFD, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER), 0, (struct sockaddr *)&addr, &addrlen) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "recvfrom(RESPONSE_BUFFER) failed.\n");
         return;
     }
 
-    close(sockfd);
+    close(SOCKFD);
+    CONNECTED = false;
 }
 
 /**
@@ -89,30 +92,46 @@ void sendCommandUDP()
  */
 int openTCPSocket()
 {
-    int sockfd;
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((SOCKFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         fprintf(stderr, "Error creating TCP socket.\n");
         return -1;
     }
 
+    CONNECTED = true;
+
     struct timeval tmout;
     memset((char *)&tmout, 0, sizeof(tmout));
     tmout.tv_sec = 15;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
+    if (setsockopt(SOCKFD, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
     {
         fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
         return -1;
     }
 
-    if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
+    if (connect(SOCKFD, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "connect(ADDR_TCP) failed.\n");
         return -1;
     }
 
-    return sockfd;
+    return SOCKFD;
+}
+
+/**
+ * @brief Exits the client
+ * 
+ */
+void closeAllConnections()
+{
+    if (CONNECTED)
+    {
+        close(SOCKFD);
+    }
+    free(ADDR_UDP);
+    free(ADDR_TCP);
+    printf("[LOCAL] exiting client.\n");
 }
 
 /**
@@ -155,8 +174,8 @@ void login(char *uid, char *password)
     if (!strcmp(RESPONSE_BUFFER, "RLO OK\n"))
     {
         LOGGED_IN = true;
-        strcpy(UID, uid);
-        strcpy(PASSWORD, password);
+        strncpy(UID, uid, sizeof(UID) - 1);
+        strncpy(PASSWORD, password, sizeof(PASSWORD) - 1);
     }
 }
 
@@ -199,21 +218,6 @@ void showUID()
 }
 
 /**
- * @brief Exits the client
- * 
- */
-void closeAllConnections()
-{
-    // TODO
-    // if (CONNECTED) {
-    //  close(SOCKFD)
-    // }
-    free(ADDR_UDP);
-    free(ADDR_TCP);
-    printf("[LOCAL] exit.\n");
-}
-
-/**
  * @brief Lists all the groups on the server
  * 
  */
@@ -238,7 +242,7 @@ void subscribe(char *gid, char *gname)
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "GSR %s %s %s\n", UID, gid, gname);
+    sprintf(COMMAND_BUFFER, "GSR %s %02d %s\n", UID, atoi(gid), gname);
     sendCommandUDP();
     printf("%s", RESPONSE_BUFFER);
 }
@@ -280,12 +284,13 @@ void myGroups()
 void selectGroup(char *gid)
 {
     GROUP_SELECTED = true;
-    strncpy(GID, gid, sizeof(GID) - 1);
+    sprintf(GID, "%02d", atoi(gid));
     printf("[LOCAL] %s is now selected.\n", GID);
 }
 
 /**
  * @brief Displays the selected GID
+ * 
  */
 void showGID()
 {
@@ -300,38 +305,45 @@ void showGID()
 }
 
 /**
- * @brief Lists all users subscribed to a group
- *
+ * @brief Displays all the users subscribed to the select group
+ * 
  */
 void ulist()
 {
     sprintf(COMMAND_BUFFER, "ULS %s\n", GID);
 
-    int sockfd;
-    if ((sockfd = openTCPSocket()) == -1)
+    if ((SOCKFD = openTCPSocket()) == -1)
     {
         return;
     }
 
-    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+    if (!GROUP_SELECTED)
     {
-        close(sockfd);
+        fprintf(stderr, "Group needs to be selected.\n");
+        return;
+    }
+
+    if (write(SOCKFD, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+    {
+        close(SOCKFD);
         fprintf(stderr, "Couldn't send command_buffer.\n");
         return;
     }
 
     int n;
     bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-    while ((n = read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER))) > 0)
+    while ((n = read(SOCKFD, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER))) > 0)
     {
         printf("%s", RESPONSE_BUFFER);
     }
 
     if (n == -1)
     {
-        close(sockfd);
         fprintf(stderr, "Error receiving server's response.\n");
     }
+
+    close(SOCKFD);
+    CONNECTED = false;
 }
 
 /**
@@ -340,7 +352,7 @@ void ulist()
  * @param message
  * @param fname
  */
-void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
+void post(char *message, char *fname)
 {
     if (!LOGGED_IN)
     {
@@ -354,8 +366,7 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
         return;
     }
 
-    int sockfd;
-    if ((sockfd = openTCPSocket()) == -1)
+    if ((SOCKFD = openTCPSocket()) == -1)
     {
         return;
     }
@@ -363,17 +374,17 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
     if (fname == NULL)
     {
         sprintf(COMMAND_BUFFER, "PST %s %s %lu %s\n", UID, GID, strlen(message), message);
-        if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+        if (write(SOCKFD, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
         {
-            close(sockfd);
+            close(SOCKFD);
             fprintf(stderr, "Couldn't send command_buffer.\n");
             return;
         }
 
         bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-        if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+        if (read(SOCKFD, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
         {
-            close(sockfd);
+            close(SOCKFD);
             fprintf(stderr, "Error receiving server's response.\n");
             return;
         }
@@ -394,9 +405,9 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
     rewind(fptr);
     sprintf(COMMAND_BUFFER, "PST %s %s %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), fsize);
     printf("%s", COMMAND_BUFFER);
-    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+    if (write(SOCKFD, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "Couldn't send command_buffer.\n");
         return;
     }
@@ -406,15 +417,15 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
     bzero(file_buffer, sizeof(file_buffer));
     while ((bytes_read = fread(file_buffer, 1, sizeof(file_buffer), fptr)) > 0)
     {
-        if (write(sockfd, file_buffer, bytes_read) == -1)
+        if (write(SOCKFD, file_buffer, bytes_read) == -1)
         {
             switch (errno)
             {
             case ECONNRESET:
                 bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-                if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+                if (read(SOCKFD, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
                 {
-                    close(sockfd);
+                    close(SOCKFD);
                     fprintf(stderr, "Error receiving server's response.\n");
                     return;
                 }
@@ -426,7 +437,7 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
                 break;
             }
 
-            close(sockfd);
+            close(SOCKFD);
             return;
         }
 
@@ -435,22 +446,24 @@ void post(char *message, char *fname) /* TODO size não pode exceder tamanho */
 
     fclose(fptr);
 
-    if (write(sockfd, "\n", 1) == -1)
+    if (write(SOCKFD, "\n", 1) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "Couldn't send '\\n' after file: %s.\n", strerror(errno));
         return;
     }
 
     bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-    if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+    if (read(SOCKFD, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "Error receiving server's response.\n");
         return;
     }
 
-    close(sockfd);
+    close(SOCKFD);
+    CONNECTED = false;
+
     printf("%s", RESPONSE_BUFFER);
 }
 
@@ -473,24 +486,23 @@ void retrieve(char *mid)
         return;
     }
 
-    int sockfd;
-    if ((sockfd = openTCPSocket()) == -1)
+    if ((SOCKFD = openTCPSocket()) == -1)
     {
         return;
     }
 
     sprintf(COMMAND_BUFFER, "RTV %s %s %s\n", UID, GID, mid);
-    if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
+    if (write(SOCKFD, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "Couldn't send command_buffer.\n");
         return;
     }
 
     bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-    if (read(sockfd, RESPONSE_BUFFER, 7) == -1)
+    if (read(SOCKFD, RESPONSE_BUFFER, 7) == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "Error receiving server's response.\n");
         return;
     }
@@ -499,7 +511,7 @@ void retrieve(char *mid)
     sscanf(RESPONSE_BUFFER, "%s %s", op, status);
     if (strcmp(status, "OK"))
     {
-        close(sockfd);
+        close(SOCKFD);
         printf("%s", RESPONSE_BUFFER);
         return;
     }
@@ -508,14 +520,14 @@ void retrieve(char *mid)
     char file_buffer[1024];
     bzero(file_buffer, 1024);
     FILE *tmpfptr = fopen("temp.bin", "wb+");
-    while ((bytes_read = read(sockfd, file_buffer, sizeof(file_buffer))) > 0)
+    while ((bytes_read = read(SOCKFD, file_buffer, sizeof(file_buffer))) > 0)
     {
         fwrite(file_buffer, sizeof(char), bytes_read, tmpfptr);
     }
 
     if (bytes_read == -1)
     {
-        close(sockfd);
+        close(SOCKFD);
         fprintf(stderr, "Error receiving server's response.\n");
         return;
     }
@@ -578,5 +590,6 @@ void retrieve(char *mid)
 
     fclose(tmpfptr);
     unlink("temp.bin");
-    close(sockfd);
+    close(SOCKFD);
+    CONNECTED = false;
 }
