@@ -168,6 +168,12 @@ void unregisterUser(char *uid, char *password)
  */
 void login(char *uid, char *password)
 {
+    if (LOGGED_IN)
+    {
+        fprintf(stderr, "User needs to logout first.\n");
+        return;
+    }
+
     sprintf(COMMAND_BUFFER, "LOG %s %s\n", uid, password);
     sendCommandUDP();
     printf("%s", RESPONSE_BUFFER);
@@ -271,6 +277,12 @@ void unsubscribe(char *gid)
  */
 void myGroups()
 {
+    if (!LOGGED_IN)
+    {
+        fprintf(stderr, "User needs to be logged in.\n");
+        return;
+    }
+
     sprintf(COMMAND_BUFFER, "GLM %s\n", UID);
     sendCommandUDP();
     printf("%s", RESPONSE_BUFFER);
@@ -296,7 +308,7 @@ void showGID()
 {
     if (!GROUP_SELECTED)
     {
-        printf("[LOCAL] GID not selected.\n");
+        fprintf(stderr, "[LOCAL] GID not selected.\n");
     }
     else
     {
