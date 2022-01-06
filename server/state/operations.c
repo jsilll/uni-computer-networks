@@ -115,10 +115,10 @@ int GLS(char *buffer)
 int GSR(char *uid, char *gid, char *gname)
 {
   char path_buffer[256];
-  if (atoi(gid) > n_groups || atoi(gid) == 0)
+  if (atoi(gid) > n_groups)
     return -1; // E_NOK
 
-  if (!strcmp(gid, "0"))
+  if (!strcmp(gid, "00"))
   {
     if (n_groups < 99)
     {

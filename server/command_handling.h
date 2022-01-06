@@ -324,7 +324,6 @@ void handleTCPCommand(int connfd, bool verbose)
     }
     else
     {
-
       int base_msg = atoi(mid);
       sprintf(buffer, "RRT OK %d", n_msg);
       write(connfd, buffer, strlen(buffer));
