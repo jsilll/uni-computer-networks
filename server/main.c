@@ -147,7 +147,7 @@ void executeCommand()
 
       if (VERBOSE)
       {
-        printf("[TCP] IP: %s PORT: %lu ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
+        printf("[TCP] IP: %s PORT: %u ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
       }
 
       handleTCPCommand(connfd, VERBOSE);

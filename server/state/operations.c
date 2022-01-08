@@ -78,6 +78,7 @@ int login(char *uid, char *pass)
 
   sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
   createFile(PATH_BUFFER, "");
+  return 0;
 }
 
 /**
@@ -95,11 +96,13 @@ int logout(char *uid, char *pass)
 
   sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
   deleteFile(PATH_BUFFER);
+  return 0;
 }
 
 int groups(char *buffer)
 {
   listGroups(buffer, NULL);
+  return 0;
 }
 
 /**
@@ -397,7 +400,7 @@ void WriteToFile(FILE *FPtr, char *data, int size_read)
  */
 void listGroups(char *buffer, char *uid)
 {
-  char name_file[12], gname[25], mid[5], group_buffer[34], groups_buffer[3267];
+  char gname[25], mid[5], group_buffer[34], groups_buffer[3267];
   int n_groups = 0, n_messages;
 
   bzero(groups_buffer, sizeof(groups_buffer));
