@@ -19,7 +19,7 @@ fd_set RSET;
 
 void exitClient(int signal_num);
 void loadInitArgs(int argc, char *argv[]);
-void readCommand();
+void executeCommand();
 
 int main(int argc, char *argv[])
 {
@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
   setupAddresses(PORT);
   UDPFD = openSocket(SOCK_DGRAM);
   TCPFD = openSocket(SOCK_STREAM);
+
   if (listen(TCPFD, 5) == -1)
   {
     fprintf(stderr, "Error on listen(TCPFD)\n");
@@ -44,7 +45,7 @@ int main(int argc, char *argv[])
   FD_ZERO(&RSET);
   for (;;)
   {
-    readCommand();
+    executeCommand();
   }
 }
 
@@ -104,7 +105,7 @@ void loadInitArgs(int argc, char *argv[])
  * @brief Reads commands from udp and tcp clients
  * 
  */
-void readCommand()
+void executeCommand()
 {
   FD_SET(TCPFD, &RSET);
   FD_SET(UDPFD, &RSET);
@@ -150,13 +151,21 @@ void readCommand()
       }
 
       handleTCPCommand(connfd, VERBOSE);
-      close(connfd);
+
       exit(EXIT_SUCCESS);
     }
   }
 
   if (FD_ISSET(UDPFD, &RSET))
   {
+
+    //  TODO
+    if (VERBOSE)
+    {
+      // printf("[UDP] IP: %s PORT: %lu ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
+      printf("[UDP] ");
+    }
+
     handleCommandUDP(UDPFD, cliaddr, VERBOSE);
   }
 }

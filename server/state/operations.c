@@ -15,7 +15,8 @@ int createFile(char *FILENAME, char *data);
 int checkFileContent(char *FILENAME, char *data);
 int deleteFile(char *FILENAME);
 
-int n_groups = 0;
+int N_GROUPS = 0;
+char PATH_BUFFER[256];
 
 /**
  * Registers a user on the DS server
@@ -23,210 +24,221 @@ int n_groups = 0;
  * @param pass
  * @return
  */
-int REG(char *uid, char *pass)
+int registerUser(char *uid, char *password)
 {
-  char buffer1[12];
-  sprintf(buffer1, "USERS/%s", uid);
-  if (createDir(buffer1) == -1)
+  sprintf(PATH_BUFFER, "USERS/%s", uid);
+  if (createDir(PATH_BUFFER) == -1)
     return -1; // DUP
-  char buffer2[29];
-  sprintf(buffer2, "USERS/%s/%s_password.txt", uid, uid);
-  createFile(buffer2, pass);
+  sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
+  createFile(PATH_BUFFER, password);
   return 0;
 }
 
 /**
- * Unregisters a user from the DS server
+ * @brief Unregisters a user from the DS server
+ * 
  * @param uid
  * @param pass
  * @return
  */
-int UNR(char *uid, char *pass)
+int unregisterUser(char *uid, char *pass)
 {
-  char buffer2[29];
-  sprintf(buffer2, "USERS/%s/%s_password.txt", uid, uid);
-  if (checkFileContent(buffer2, pass) == -1)
-    return -1;
-  char buffer1[12];
-  sprintf(buffer1, "USERS/%s", uid);
-  deleteFile(buffer2);
-  sprintf(buffer2, "USERS/%s/%s_login.txt", uid, uid);
-  deleteFile(buffer2);
-  deleteDir(buffer1);
-  for (int i = 0; i < 10; i++)
+  sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
+  if (checkFileContent(PATH_BUFFER, pass) == -1)
+    return -1; // wrong password NOK
+  deleteFile(PATH_BUFFER);
+
+  sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
+  deleteFile(PATH_BUFFER);
+
+  sprintf(PATH_BUFFER, "USERS/%s", uid);
+  deleteDir(PATH_BUFFER);
+
+  for (int i = 0; i < 100; i++)
   {
-    sprintf(buffer2, "GROUPS/0%d/%s.txt", i, uid);
-    deleteFile(buffer2);
+    sprintf(PATH_BUFFER, "GROUPS/%02d/%s.txt", i, uid);
+    deleteFile(PATH_BUFFER);
   }
-  for (int i = 10; i < 100; i++)
-  {
-    sprintf(buffer2, "GROUPS/%d/%s.txt", i, uid);
-    deleteFile(buffer2);
-  }
+
   return 0;
 }
 
 /**
- * Logs a user in the DS server
+ * @brief Logs a user in the DS server
+ * 
  * @param uid
  * @param pass
  * @return
  */
-int LOG(char *uid, char *pass)
+int login(char *uid, char *pass)
 {
-  char buffer1[29];
-  sprintf(buffer1, "USERS/%s/%s_password.txt", uid, uid);
-  if (checkFileContent(buffer1, pass) == -1)
-    return -1;
-  char buffer2[128];
-  sprintf(buffer2, "USERS/%s/%s_login.txt", uid, uid);
-  createFile(buffer2, "");
+  sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
+  if (checkFileContent(PATH_BUFFER, pass) == -1)
+    return -1; // wrong password NOK
+
+  sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
+  createFile(PATH_BUFFER, "");
 }
 
 /**
- * Logs a user out of the DS server
+ * @brief Logs a user out of the DS server
+ * 
  * @param uid
  * @param pass
  * @return
  */
-int OUT(char *uid, char *pass)
+int logout(char *uid, char *pass)
 {
-  char buffer1[29];
-  sprintf(buffer1, "USERS/%s/%s_password.txt", uid, uid);
-  if (checkFileContent(buffer1, pass) == -1)
-    return -1;
-  char buffer2[128];
-  sprintf(buffer2, "USERS/%s/%s_login.txt", uid, uid);
-  deleteFile(buffer2);
+  sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
+  if (checkFileContent(PATH_BUFFER, pass) == -1)
+    return -1; // wrong password NOK
+
+  sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
+  deleteFile(PATH_BUFFER);
 }
 
-int GLS(char *buffer)
+int groups(char *buffer)
 {
   listGroups(buffer, NULL);
 }
 
 /**
- *
+ * @brief Subscribes a user to a group
+ * 
  * @param uid
  * @param gid
  * @param gname
  * @return
  */
-int GSR(char *uid, char *gid, char *gname)
+int subscribe(char *uid, char *gid, char *gname)
 {
-  char path_buffer[256];
-  if (atoi(gid) > n_groups)
+  if (atoi(gid) > N_GROUPS)
+  {
     return -1; // E_NOK
+  }
 
   if (!strcmp(gid, "00"))
   {
-    if (n_groups < 99)
+    if (N_GROUPS >= 99)
     {
-      n_groups++;
-      sprintf(path_buffer, "GROUPS/%02d", n_groups);
-      createDir(path_buffer);
-      sprintf(path_buffer, "GROUPS/%02d/MSG", n_groups);
-      createDir(path_buffer);
-      sprintf(path_buffer, "GROUPS/%02d/MSG/num_msg.txt", n_groups, n_groups);
-      createFile(path_buffer, "0000");
-      sprintf(path_buffer, "GROUPS/%02d/%02d_name.txt", n_groups, n_groups);
-      createFile(path_buffer, gname);
-      sprintf(path_buffer, "GROUPS/%02d/%s.txt", n_groups, uid);
-      createFile(path_buffer, "");
-      return n_groups; // NEW GID
+      return -2; // E_FULL
     }
     else
     {
-      return -2;
-    } // E_FULL
+      N_GROUPS++;
+      sprintf(PATH_BUFFER, "GROUPS/%02d", N_GROUPS);
+      createDir(PATH_BUFFER);
+      sprintf(PATH_BUFFER, "GROUPS/%02d/MSG", N_GROUPS);
+      createDir(PATH_BUFFER);
+      sprintf(PATH_BUFFER, "GROUPS/%02d/MSG/num_msg.txt", N_GROUPS);
+      createFile(PATH_BUFFER, "0000");
+      sprintf(PATH_BUFFER, "GROUPS/%02d/name.txt", N_GROUPS);
+      createFile(PATH_BUFFER, gname);
+      sprintf(PATH_BUFFER, "GROUPS/%02d/%s.txt", N_GROUPS, uid);
+      createFile(PATH_BUFFER, "");
+
+      return N_GROUPS; // NEW GID
+    }
   }
-  sprintf(path_buffer, "GROUPS/%s/%s_name.txt", gid, gid);
-  if (checkFileContent(path_buffer, gname) == -1)
+
+  sprintf(PATH_BUFFER, "GROUPS/%s/name.txt", gid);
+  if (checkFileContent(PATH_BUFFER, gname) == -1)
     return -1;
 
-  sprintf(path_buffer, "GROUPS/%s/%s.txt", gid, uid);
-  createFile(path_buffer, "");
+  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
+  createFile(PATH_BUFFER, "");
   return 0; // E_OK
 }
 
 /**
- *
+ * @brief Unsubscribes a user from a group
+ * 
  * @param uid
  * @param gid
  * @return
  */
-int GUR(char *uid, char *gid)
+int unsubscribe(char *uid, char *gid)
 {
-  if (atoi(gid) > n_groups || atoi(gid) == 0)
+  if (atoi(gid) > N_GROUPS || atoi(gid) == 0)
     return -1; // E_NOK
 
-  char path_buffer[256];
-  sprintf(path_buffer, "GROUPS/%s/%s.txt", gid, uid);
-  return deleteFile(path_buffer);
+  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
+  return deleteFile(PATH_BUFFER);
 }
 
 /**
- *
+ * @brief Lists all the groups a user is subscribed to
+ * 
  * @param uid
- * @return
+ * @return int
  */
-int GLM(char *uid, char *buffer)
+int myGroups(char *uid, char *buffer)
 {
-  char path_buffer[256];
-  sprintf(path_buffer, "/home/joao/Downloads/USERS/%s/%s_login.txt", uid, uid);
-  if (fopen(path_buffer, "r") == NULL)
-  {
-    return -1;
-  }
+  // sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
+  // FILE *fptr;
+  // if ((fptr = fopen(PATH_BUFFER, "r")) == NULL)
+  // {
+  //   return -1; // NOK
+  // }
+  // fclose(fptr); TODO perguntar se login é verificado aqui ou no cliente
+
   listGroups(buffer, uid);
   return 0;
 }
 
 /**
- *
+ * @brief
+ * 
  * @param gid
  * @return
  */
-int ULS(char *gid, char *buffer)
+DIR *ulist(char *gid)
 {
-  if (atoi(gid) > n_groups || atoi(gid) == 0)
+  if (atoi(gid) > N_GROUPS || atoi(gid) == 0)
   {
-    strcpy(buffer, "RUL NOK\n");
-    return 0;
+    return NULL;
   }
 
-  char path_buffer[256], aux_buffer[599994] = {'\0'};
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s", gid);
-  struct dirent *de;
-  DIR *dr = opendir(path_buffer);
-  sprintf(path_buffer, "%s_name.txt", gid);
-  while ((de = readdir(dr)) != NULL)
-  {
-    if (!strcmp(de->d_name, path_buffer))
-    {
-      char path_buffer2[256], gname[25];
-      sprintf(path_buffer2, "/home/joao/Downloads/GROUPS/%s/%s", gid, path_buffer);
-      FILE *fPtr = fopen(path_buffer2, "r");
-      fscanf(fPtr, "%24s", gname);
-      fclose(fPtr);
-      sprintf(buffer, "RUL OK %s", gname);
-      continue;
-    }
-
-    if (de->d_name[0] == '.' || !strcmp(de->d_name, "MSG"))
-      continue;
-
-    char uid[7];
-    snprintf(uid, 7, " %s", de->d_name);
-    strcat(aux_buffer, uid);
-  }
-  strcat(aux_buffer, "\n");
-  strcat(buffer, aux_buffer);
-  return 0;
+  sprintf(PATH_BUFFER, "GROUPS/%s", gid);
+  return opendir(PATH_BUFFER);
 }
 
 /**
- *
+ * @brief 
+ * 
+ * @param gid 
+ * @param buffer 
+ */
+void getGName(char *gid, char *buffer)
+{
+  char gname[25];
+  sprintf(PATH_BUFFER, "GROUPS/%s/%s", gid, "name.txt");
+  FILE *fPtr = fopen(PATH_BUFFER, "r");
+  fscanf(fPtr, "%24s", gname);
+  fclose(fPtr);
+  sprintf(buffer, " %s", gname);
+}
+
+/**
+ * @brief 
+ * 
+ * @param de 
+ * @param buffer 
+ */
+void ulsAux(struct dirent *de, char *buffer)
+{
+  char uid[8];
+
+  if (de->d_name[0] == '.' || !strcmp(de->d_name, "MSG") || !strcmp(de->d_name, "name.txt"))
+    return;
+
+  snprintf(uid, 7, " %s", de->d_name);
+  strcat(buffer, uid);
+}
+
+/**
+ * @brief Posts a message in a group
+ * 
  * @param uid
  * @param gid
  * @param tsize
@@ -236,39 +248,38 @@ int ULS(char *gid, char *buffer)
  * @param data
  * @return
  */
-FILE *PST(char *uid, char *gid, char *text, char *fname, char *mid)
+FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
 {
-  char path_buffer[256];
 
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s.txt", gid, uid);
-  if (atoi(gid) == 0 || n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
+  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
+  if (atoi(gid) == 0 || N_GROUPS < atoi(gid) || fopen(PATH_BUFFER, "r") == NULL)
   {
     return NULL;
   }
 
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/num_msg.txt", gid);
+  FILE *FPtr = fopen(PATH_BUFFER, "r+");
   bzero(mid, 5);
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/num_msg.txt", gid);
-  FILE *FPtr = fopen(path_buffer, "r+");
   fread(mid, sizeof(char), 4, FPtr);
   sprintf(mid, "%04d", atoi(mid) + 1);
   fseek(FPtr, 0, SEEK_SET);
   fputs(mid, FPtr);
   fclose(FPtr);
 
-  sprintf(path_buffer, "GROUPS/%s/MSG/%s", gid, mid);
-  createDir(path_buffer);
-  sprintf(path_buffer, "GROUPS/%s/MSG/%s/A U T H O R.txt", gid, mid);
-  createFile(path_buffer, uid);
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s", gid, mid);
+  createDir(PATH_BUFFER);
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s/A U T H O R.txt", gid, mid);
+  createFile(PATH_BUFFER, uid);
 
-  sprintf(path_buffer, "GROUPS/%s/MSG/%s/T E X T.txt", gid, mid);
-  createFile(path_buffer, text);
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s/T E X T.txt", gid, mid);
+  createFile(PATH_BUFFER, text);
 
   if (fname != NULL)
   {
-    sprintf(path_buffer, "GROUPS/%s/MSG/%s/F I L E.txt", gid, mid);
-    createFile(path_buffer, fname);
-    sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid, fname);
-    return fopen(path_buffer, "wb");
+    sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s/F I L E.txt", gid, mid);
+    createFile(PATH_BUFFER, fname);
+    sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s/%s", gid, mid, fname);
+    return fopen(PATH_BUFFER, "wb");
   }
 
   return FPtr;
@@ -281,18 +292,18 @@ FILE *PST(char *uid, char *gid, char *text, char *fname, char *mid)
  * @param mid
  * @return
  */
-int RTV(char *uid, char *gid, char *mid)
+int retrieve(char *uid, char *gid, char *mid)
 {
-  char path_buffer[256];
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s.txt", gid, uid);
-  if (atoi(gid) == 0 || n_groups < atoi(gid) || fopen(path_buffer, "r") == NULL)
+  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
+  if (atoi(gid) == 0 || N_GROUPS < atoi(gid) || fopen(PATH_BUFFER, "r") == NULL)
   {
     return -1;
   }
 
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/num_msg.txt", gid);
+  FILE *FPtr = fopen(PATH_BUFFER, "r");
+
   char n_msg[5];
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/num_msg.txt", gid);
-  FILE *FPtr = fopen(path_buffer, "r");
   fread(n_msg, sizeof(char), 5, FPtr);
   fclose(FPtr);
 
@@ -314,45 +325,41 @@ int RTV(char *uid, char *gid, char *mid)
   return to_read;
 }
 
-FILE *RTVAux(char *gid, int mid, char *buffer)
+FILE *retrieveAux(char *gid, int mid, char *buffer)
 {
-  char mid_aux[5];
-  sprintf(mid_aux, "%04d", mid); // MID
-
-  char path_buffer[256];
-  FILE *FPtr;
   char text[240];
-  bzero(text, 240);
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/T E X T.txt", gid, mid_aux);
-  FPtr = fopen(path_buffer, "r");
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/T E X T.txt", gid, mid);
+  FILE *FPtr = fopen(PATH_BUFFER, "r");
+  bzero(text, sizeof(text));
   fread(text, sizeof(char), 240, FPtr); // TEXT
   fclose(FPtr);
   int len = strlen(text); // TSize
 
   char uid[6];
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/A U T H O R.txt", gid, mid_aux);
-  FPtr = fopen(path_buffer, "r");
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/A U T H O R.txt", gid, mid);
+  FPtr = fopen(PATH_BUFFER, "r");
+  bzero(uid, sizeof(uid));
   fread(uid, sizeof(char), 5, FPtr); // UID
   fclose(FPtr);
 
   char file_name_buffer[25];
-  bzero(file_name_buffer, 25);
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/F I L E.txt", gid, mid_aux);
-  FPtr = fopen(path_buffer, "r");
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/F I L E.txt", gid, mid);
+  FPtr = fopen(PATH_BUFFER, "r");
+  bzero(file_name_buffer, sizeof(file_name_buffer));
   fread(file_name_buffer, sizeof(char), 24, FPtr); // fname
   fclose(FPtr);
 
-  sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG/%s/%s", gid, mid_aux, file_name_buffer);
-  if ((FPtr = fopen(path_buffer, "rb")) != NULL)
+  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/%s", gid, mid, file_name_buffer);
+  if ((FPtr = fopen(PATH_BUFFER, "rb")) != NULL)
   {
     fseek(FPtr, 0L, SEEK_END);
     long size = ftell(FPtr);
     rewind(FPtr);
-    sprintf(buffer, " %s %s %d %s %c %s %lu ", mid_aux, uid, len, text, '/', file_name_buffer, size);
+    sprintf(buffer, " %04d %s %d %s %c %s %lu ", mid, uid, len, text, '/', file_name_buffer, size);
   }
   else
   {
-    sprintf(buffer, " %s %s %d %s", mid_aux, uid, len, text);
+    sprintf(buffer, " %04d %s %d %s", mid, uid, len, text);
   }
 
   return FPtr;
@@ -377,7 +384,7 @@ int ReadFile(FILE *FPtr, char *data, int size_read)
  * @param mid 
  * @param data 
  */
-void WriteFile(FILE *FPtr, char *data, int size_read)
+void WriteToFile(FILE *FPtr, char *data, int size_read)
 {
   fwrite(data, sizeof(char), size_read, FPtr);
 }
@@ -389,91 +396,89 @@ void WriteFile(FILE *FPtr, char *data, int size_read)
  */
 void listGroups(char *buffer, char *uid)
 {
-  char gid[3], name_file[12], gname[25], mid[5], path_buffer[256], group_buffer[32], groups_buffer[3301] = {'\0'};
-  int n_groups2 = 0, n_messages;
+  char name_file[12], gname[25], mid[5], group_buffer[34], groups_buffer[3267];
+  int n_groups = 0, n_messages;
 
-  struct dirent *de;
-  DIR *dr = opendir("/home/joao/Downloads/GROUPS");
-  while ((de = readdir(dr)) != NULL)
+  bzero(groups_buffer, sizeof(groups_buffer));
+  for (int i = 1; i <= N_GROUPS; i++)
   {
+    n_groups++;
     bool my_group = false;
-    if (de->d_name[0] == '.')
-      continue;
-
-    n_groups2++;
-    strcpy(gid, de->d_name);
-    sprintf(name_file, "%s_name.txt", gid);
-    sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s", gid);
+    sprintf(PATH_BUFFER, "GROUPS/%02d", i);
 
     n_messages = 0;
-    struct dirent *de2;
-    DIR *dr2 = opendir(path_buffer);
-    while ((de2 = readdir(dr2)) != NULL)
+    struct dirent *group_entry;
+    DIR *group_dir = opendir(PATH_BUFFER);
+    while ((group_entry = readdir(group_dir)) != NULL)
     {
-      if (de2->d_name[0] == '.')
+      if (group_entry->d_name[0] == '.')
         continue;
 
       if (uid != NULL)
       {
-        sprintf(path_buffer, "%s.txt", uid);
-        if (!strcmp(de2->d_name, path_buffer))
+        sprintf(PATH_BUFFER, "%s.txt", uid);
+        if (!strcmp(group_entry->d_name, PATH_BUFFER))
         {
           my_group = true;
         }
       }
 
-      if (!strcmp(de2->d_name, name_file))
+      if (!strcmp(group_entry->d_name, "name.txt"))
       {
-        sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/%s", gid, name_file);
-        FILE *fPtr = fopen(path_buffer, "r");
+        sprintf(PATH_BUFFER, "GROUPS/%02d/name.txt", i);
+        FILE *fPtr = fopen(PATH_BUFFER, "r");
         fscanf(fPtr, "%24s", gname);
         fclose(fPtr);
       }
-      else if (!strcmp(de2->d_name, "MSG"))
+      else if (!strcmp(group_entry->d_name, "MSG"))
       {
-        sprintf(path_buffer, "/home/joao/Downloads/GROUPS/%s/MSG", gid);
-        struct dirent *de3;
-        DIR *dr3 = opendir(path_buffer);
-        while ((de3 = readdir(dr3)) != NULL)
+        sprintf(PATH_BUFFER, "GROUPS/%02d/MSG", i);
+        struct dirent *msg_entry;
+        DIR *msg_dir = opendir(PATH_BUFFER);
+        while ((msg_entry = readdir(msg_dir)) != NULL)
         {
-          if (de3->d_name[0] == '.' || de3->d_name[0] == 'n')
+          if (msg_entry->d_name[0] == '.' || msg_entry->d_name[0] == 'n')
             continue;
           n_messages++;
         }
         sprintf(mid, "%04d", n_messages);
-        closedir(dr3);
+        closedir(msg_dir);
       }
     }
 
     if (uid == NULL || my_group)
     {
-      sprintf(group_buffer, " %s %s %s", gid, gname, mid);
+      sprintf(group_buffer, " %02d %s %s", i, gname, mid);
       strcat(groups_buffer, group_buffer);
     }
     else
     {
-      n_groups2--;
+      n_groups--;
     }
 
-    closedir(dr2);
+    closedir(group_dir);
   }
-  closedir(dr);
 
   if (uid == NULL)
-    sprintf(buffer, "RGL %d%s\n", n_groups2, groups_buffer);
+  {
+    sprintf(buffer, "RGL %d%s\n", n_groups, groups_buffer);
+  }
   else
-    sprintf(buffer, "RGM %d%s\n", n_groups2, groups_buffer);
+  {
+    sprintf(buffer, "RGM %d%s\n", n_groups, groups_buffer);
+  }
 }
 
 /**
- * Creates a directory
+ * @brief Creates a directory
+ * 
  * @param DIRNAME
  * @return
  */
 int createDir(char *DIRNAME)
 {
   char dir_name[128];
-  sprintf(dir_name, "/home/joao/Downloads/%s", DIRNAME);
+  sprintf(dir_name, "%s", DIRNAME);
   return mkdir(dir_name, 0700);
 }
 
@@ -485,7 +490,7 @@ int createDir(char *DIRNAME)
 int deleteDir(char *DIRNAME)
 {
   char user_dirname[128];
-  sprintf(user_dirname, "/home/joao/Downloads/%s", DIRNAME);
+  sprintf(user_dirname, "%s", DIRNAME);
   return rmdir(user_dirname);
 }
 
@@ -498,7 +503,7 @@ int deleteDir(char *DIRNAME)
 int createFile(char *FILENAME, char *data)
 {
   char pathname[128];
-  sprintf(pathname, "/home/joao/Downloads/%s", FILENAME);
+  sprintf(pathname, "%s", FILENAME);
   FILE *fPtr = fopen(pathname, "w");
   if (fPtr == NULL)
     return -1;
@@ -518,7 +523,7 @@ int createFile(char *FILENAME, char *data)
 int checkFileContent(char *FILENAME, char *data)
 {
   char pathname[128];
-  sprintf(pathname, "/home/joao/Downloads/%s", FILENAME);
+  sprintf(pathname, "%s", FILENAME);
   FILE *fPtr = fopen(pathname, "r");
   if (fPtr == NULL)
     return -1;
@@ -540,6 +545,6 @@ int checkFileContent(char *FILENAME, char *data)
 int deleteFile(char *FILENAME)
 {
   char pathname[128];
-  sprintf(pathname, "/home/joao/Downloads/%s", FILENAME);
+  sprintf(pathname, "%s", FILENAME);
   return unlink(pathname);
 }

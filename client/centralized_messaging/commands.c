@@ -13,7 +13,7 @@
 
 bool LOGGED_IN = false, GROUP_SELECTED = false, CONNECTED = false;
 char UID[6], PASSWORD[9], GID[3];                // TODO 8 16 4
-char COMMAND_BUFFER[512], RESPONSE_BUFFER[3175]; // TODO 4096
+char COMMAND_BUFFER[512], RESPONSE_BUFFER[3274]; // TODO 4096
 int SOCKFD;
 struct addrinfo *ADDR_UDP, *ADDR_TCP;
 // TODO unecessarily large bzeros
@@ -600,7 +600,7 @@ void retrieve(char *mid)
             FILE *datafptr = fopen(fname, "wb");
             for (int j = 0; j < iter; j += 1024)
             {
-                size_t size = fread(file_buffer, sizeof(char), (((1024) < (iter - j)) ? (1024) : (iter - j)), tmpfptr);
+                size_t size = fread(file_buffer, sizeof(char), ((1024) < (iter - j)) ? (1024) : (iter - j), tmpfptr);
                 fwrite(file_buffer, sizeof(char), size, datafptr);
             }
 

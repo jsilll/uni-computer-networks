@@ -19,7 +19,7 @@ char PORT[6], ADDRESS[INET6_ADDRSTRLEN];
 void exitClient(int signum);
 void getLocalHostAddr();
 void loadInitArgs(int argc, char *argv[]);
-void execCommand(char *line);
+void readCommand(char *line);
 
 int main(int argc, char *argv[])
 {
@@ -41,12 +41,13 @@ int main(int argc, char *argv[])
   char line[MAX_INPUT_SIZE];
   while (fgets(line, sizeof(line) / sizeof(char), stdin))
   {
-    execCommand(line);
+    readCommand(line);
   }
 }
 
 /**
  * @brief Signal Handler for terminating the client
+ * 
  * @param signum
  */
 void exitClient(int signum)
@@ -57,13 +58,13 @@ void exitClient(int signum)
 
 /**
  * @brief Gets the local machine's ADDRESS
+ * 
  */
 void getLocalHostAddr()
 {
   struct addrinfo hints;
-  memset(&hints, 0, sizeof hints);
+  memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_DGRAM;
   hints.ai_flags = AI_CANONNAME;
 
   char hostname_buf[128];
@@ -77,6 +78,7 @@ void getLocalHostAddr()
   struct addrinfo *host_addrinfo;
   if ((errcode = getaddrinfo(hostname_buf, NULL, &hints, &host_addrinfo)))
   {
+    free(host_addrinfo);
     fprintf(stderr, "error: getaddrinfo: %s\n", gai_strerror(errcode));
     exit(EXIT_FAILURE);
   }
@@ -84,6 +86,8 @@ void getLocalHostAddr()
   char buffer[INET_ADDRSTRLEN];
   struct in_addr *addr = &((struct sockaddr_in *)host_addrinfo->ai_addr)->sin_addr;
   strcpy(ADDRESS, inet_ntop(host_addrinfo->ai_family, addr, buffer, INET6_ADDRSTRLEN));
+
+  free(host_addrinfo);
 }
 
 /**
@@ -132,7 +136,7 @@ void loadInitArgs(int argc, char *argv[])
  *
  * @param line string that represents a command
  */
-void execCommand(char *line)
+void readCommand(char *line)
 {
   char op[MAX_INPUT_SIZE] = {'\0'}, arg1[MAX_INPUT_SIZE] = {'\0'}, arg2[MAX_INPUT_SIZE] = {'\0'}, arg3[MAX_INPUT_SIZE] = {'\0'};
 
