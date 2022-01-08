@@ -21,7 +21,7 @@
 void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 {
   socklen_t len = sizeof(cliaddr);
-  char command_buffer[33], response_buffer[3274];
+  char command_buffer[38], response_buffer[3274];
 
   bzero(command_buffer, sizeof(command_buffer));
   if (recvfrom(udpfd, command_buffer, sizeof(command_buffer), 0, (struct sockaddr *)&cliaddr, &len) == -1 && verbose)
@@ -34,6 +34,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   if (verbose)
   {
     printf("CMD: %s", command_buffer);
+    fflush(stdout);
   }
 
   char op[5], uid[7], arg2[10], gname[26], arg4[2];
