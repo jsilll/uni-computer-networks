@@ -11,6 +11,13 @@
 #include "state/parsing.h"
 #include "state/operations.h"
 
+/**
+ * @brief 
+ * 
+ * @param udpfd 
+ * @param cliaddr 
+ * @param verbose 
+ */
 void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 {
   socklen_t len = sizeof(cliaddr);
@@ -158,6 +165,12 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   sendto(udpfd, response_buffer, strlen(response_buffer), 0, (struct sockaddr *)&cliaddr, sizeof(cliaddr));
 }
 
+/**
+ * @brief 
+ * 
+ * @param connfd 
+ * @param verbose 
+ */
 void handleTCPCommand(int connfd, bool verbose)
 {
   char op[5];

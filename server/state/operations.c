@@ -391,6 +391,7 @@ void WriteToFile(FILE *FPtr, char *data, int size_read)
 
 /**
  * Lists Groups
+ * 
  * @param buffer
  * @return
  */
@@ -484,6 +485,7 @@ int createDir(char *DIRNAME)
 
 /**
  * Delete directory
+ * 
  * @param DIRNAME
  * @return
  */
@@ -496,6 +498,7 @@ int deleteDir(char *DIRNAME)
 
 /**
  * Creates a file
+ * 
  * @param FILENAME
  * @param data
  * @return
@@ -516,6 +519,7 @@ int createFile(char *FILENAME, char *data)
 
 /**
  * Checks if has a certain content
+ * 
  * @param FILENAME
  * @param data
  * @return
