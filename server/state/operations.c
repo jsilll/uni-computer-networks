@@ -347,14 +347,14 @@ FILE *retrieveAux(char *gid, int mid, char *buffer)
 
   char file_name_buffer[25];
   sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/F I L E.txt", gid, mid);
-  FPtr = fopen(PATH_BUFFER, "r");
-  bzero(file_name_buffer, sizeof(file_name_buffer));
-  fread(file_name_buffer, sizeof(char), 24, FPtr); // fname
-  fclose(FPtr);
-
-  sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/%s", gid, mid, file_name_buffer);
-  if ((FPtr = fopen(PATH_BUFFER, "rb")) != NULL)
+  if ((FPtr = fopen(PATH_BUFFER, "r")) != NULL)
   {
+    bzero(file_name_buffer, sizeof(file_name_buffer));
+    fread(file_name_buffer, sizeof(char), 24, FPtr); // fname
+    fclose(FPtr);
+
+    sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/%s", gid, mid, file_name_buffer);
+    FPtr = fopen(PATH_BUFFER, "rb");
     fseek(FPtr, 0L, SEEK_END);
     long size = ftell(FPtr);
     rewind(FPtr);

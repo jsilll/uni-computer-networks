@@ -238,7 +238,7 @@ void handleTCPCommand(int connfd, bool verbose)
   }
   else if (!strcmp(op, "PST"))
   {
-    char uid[7], gid[4], tsize[5], text[240];
+    char uid[7], gid[4], tsize[5], text[241];
 
     bzero(command_buffer, sizeof(command_buffer));
     read(connfd, command_buffer, 9);
