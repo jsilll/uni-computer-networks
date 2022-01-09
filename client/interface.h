@@ -29,9 +29,9 @@ const char CMD_RETRIEVE[] = "retrieve";
 const char CMD_RETRIEVE_SHORT[] = "r";
 
 /* Output Messages */
-const char MSG_INVALID_IP[] = "Address isn't a valid IP, checking if it's a valid address\n";
-const char MSG_INVALID_PORT[] = "Invalid value for port argument\n";
-const char MSG_UNKNOWN_CMD[] = "Unknown command\n";
-const char MSG_INVALID_POST_CMD[] = "Invalid post command\n";
+const char ERR_INVALID_IP[] = "Address isn't a valid IP, checking if it's a valid address\n";
+const char ERR_INVALID_PORT[] = "Invalid value for port argument\n";
+const char ERR_UNKNOWN_CMD[] = "Unknown command\n";
+const char ERR_INVALID_POST_CMD[] = "Invalid post command\n";
 
 #endif //CLIENT_CLIENT_INTERFACE_H

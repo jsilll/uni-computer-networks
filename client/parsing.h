@@ -18,7 +18,7 @@ void parseIPArg(char *ip)
 {
   if (!inet_pton(AF_INET, ip, NULL))
   {
-    fprintf(stderr, MSG_INVALID_IP);
+    fprintf(stderr, ERR_INVALID_IP);
   }
   // exit(EXIT_FAILURE)
 }
@@ -37,7 +37,7 @@ void parsePortArg(char *port)
       long port_parsed = strtol(port, NULL, 10);
       if (port_parsed <= 0 || port_parsed > 65535)
       {
-        fprintf(stderr, MSG_INVALID_PORT);
+        fprintf(stderr, ERR_INVALID_PORT);
         exit(EXIT_FAILURE);
       }
       return;

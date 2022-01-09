@@ -148,11 +148,11 @@ void readCommand(char *line)
     numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
     if (numTokens < 2)
     {
-      fprintf(stderr, MSG_INVALID_POST_CMD);
+      fprintf(stderr, ERR_INVALID_POST_CMD);
     }
     else if ((!strlen(arg2) && line[strlen(line) - 2] != '"'))
     {
-      fprintf(stderr, MSG_INVALID_POST_CMD);
+      fprintf(stderr, ERR_INVALID_POST_CMD);
     }
     else if (strlen(arg2))
     {
@@ -165,7 +165,7 @@ void readCommand(char *line)
   }
   else if (numTokens == 4)
   {
-    fprintf(stderr, MSG_UNKNOWN_CMD);
+    fprintf(stderr, ERR_UNKNOWN_CMD);
   }
   else
   {
@@ -202,7 +202,7 @@ void readCommand(char *line)
       }
       else
       {
-        fprintf(stderr, MSG_UNKNOWN_CMD);
+        fprintf(stderr, ERR_UNKNOWN_CMD);
       }
       break;
 
@@ -221,7 +221,7 @@ void readCommand(char *line)
       }
       else
       {
-        fprintf(stderr, MSG_UNKNOWN_CMD);
+        fprintf(stderr, ERR_UNKNOWN_CMD);
       }
       break;
 
@@ -244,12 +244,12 @@ void readCommand(char *line)
       }
       else
       {
-        fprintf(stderr, MSG_UNKNOWN_CMD);
+        fprintf(stderr, ERR_UNKNOWN_CMD);
       }
       break;
 
     default:
-      fprintf(stderr, MSG_UNKNOWN_CMD);
+      fprintf(stderr, ERR_UNKNOWN_CMD);
     }
   }
 }
