@@ -33,3 +33,9 @@ clean:
 	@echo Cleaning...
 	rm -f client/*.o client/centralized_messaging/*.o client/client
 	rm -f server/*.o server/state/*.o server/server
+
+count:
+	find . -wholename '*/client/*.c' | xargs wc -l | grep total
+	find . -wholename '*/client/*.h' | xargs wc -l | grep total
+	find . -wholename '*/server/*.c' | xargs wc -l | grep total
+	find . -wholename '*/server/*.h' | xargs wc -l | grep total
