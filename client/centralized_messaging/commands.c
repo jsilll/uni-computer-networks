@@ -530,7 +530,7 @@ void retrieve(char *mid)
     if (strcmp(status, "OK"))
     {
         close(SOCKFD);
-        printf("%s", RESPONSE_BUFFER);
+        printf("%s %s\n", op, status);
         return;
     }
 
