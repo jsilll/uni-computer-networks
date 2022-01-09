@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define T_SIZE 240
-
 /**
  * @brief Parses a string representing a group ID.
  * 2-digit number (01 – 99)

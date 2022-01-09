@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
  */
 void exitClient(int signal_num)
 {
+  // TODO remove GROUPS and USERS folders
   close(TCPFD);
   close(UDPFD);
   freeAddresses();

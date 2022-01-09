@@ -169,7 +169,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 }
 
 /**
- * @brief Handles incoming commands from a udp connection
+ * @brief Handles incoming commands from a tcp connection
  * 
  * @param connfd 
  * @param verbose 

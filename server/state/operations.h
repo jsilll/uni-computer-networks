@@ -16,7 +16,7 @@ int retrieve(char *uid, char *gid, char *mid);
 FILE *retrieveAux(char *gid, int mid, char *buffer);
 
 void getGName(char *gid, char *buffer);
-void WriteToFile(FILE *FPtr, char *data, int size_read);
 int ReadFile(FILE *FPtr, char *data, int size_read);
+void WriteToFile(FILE *FPtr, char *data, int size_read);
 
 #endif //RC_PROJECT_SERVER_STATE_H_

@@ -9,11 +9,8 @@
 #include "operations.h"
 
 void listGroups(char *buffer, char *uid);
-int createDir(char *DIRNAME);
-int deleteDir(char *DIRNAME);
 int createFile(char *FILENAME, char *data);
 int checkFileContent(char *FILENAME, char *data);
-int deleteFile(char *FILENAME);
 
 int N_GROUPS = 0;
 char PATH_BUFFER[256];
@@ -27,7 +24,7 @@ char PATH_BUFFER[256];
 int registerUser(char *uid, char *password)
 {
   sprintf(PATH_BUFFER, "USERS/%s", uid);
-  if (createDir(PATH_BUFFER) == -1)
+  if (mkdir(PATH_BUFFER, 0700) == -1)
     return -1; // DUP
   sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
   createFile(PATH_BUFFER, password);
@@ -46,18 +43,18 @@ int unregisterUser(char *uid, char *pass)
   sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
   if (checkFileContent(PATH_BUFFER, pass) == -1)
     return -1; // wrong password NOK
-  deleteFile(PATH_BUFFER);
+  unlink(PATH_BUFFER);
 
   sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
-  deleteFile(PATH_BUFFER);
+  unlink(PATH_BUFFER);
 
   sprintf(PATH_BUFFER, "USERS/%s", uid);
-  deleteDir(PATH_BUFFER);
+  rmdir(PATH_BUFFER);
 
   for (int i = 0; i < 100; i++)
   {
     sprintf(PATH_BUFFER, "GROUPS/%02d/%s.txt", i, uid);
-    deleteFile(PATH_BUFFER);
+    unlink(PATH_BUFFER);
   }
 
   return 0;
@@ -95,7 +92,7 @@ int logout(char *uid, char *pass)
     return -1; // wrong password NOK
 
   sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
-  deleteFile(PATH_BUFFER);
+  unlink(PATH_BUFFER);
   return 0;
 }
 
@@ -130,9 +127,9 @@ int subscribe(char *uid, char *gid, char *gname)
     {
       N_GROUPS++;
       sprintf(PATH_BUFFER, "GROUPS/%02d", N_GROUPS);
-      createDir(PATH_BUFFER);
+      mkdir(PATH_BUFFER, 0700);
       sprintf(PATH_BUFFER, "GROUPS/%02d/MSG", N_GROUPS);
-      createDir(PATH_BUFFER);
+      mkdir(PATH_BUFFER, 0700);
       sprintf(PATH_BUFFER, "GROUPS/%02d/MSG/num_msg.txt", N_GROUPS);
       createFile(PATH_BUFFER, "0000");
       sprintf(PATH_BUFFER, "GROUPS/%02d/name.txt", N_GROUPS);
@@ -166,7 +163,7 @@ int unsubscribe(char *uid, char *gid)
     return -1; // E_NOK
 
   sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
-  return deleteFile(PATH_BUFFER);
+  return unlink(PATH_BUFFER);
 }
 
 /**
@@ -270,7 +267,7 @@ FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
   fclose(FPtr);
 
   sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s", gid, mid);
-  createDir(PATH_BUFFER);
+  mkdir(PATH_BUFFER, 0700);
   sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s/A U T H O R.txt", gid, mid);
   createFile(PATH_BUFFER, uid);
 
@@ -289,7 +286,8 @@ FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
 }
 
 /**
- *
+ * @brief Performs the retrieve command
+ * 
  * @param uid
  * @param gid
  * @param mid
@@ -369,31 +367,33 @@ FILE *retrieveAux(char *gid, int mid, char *buffer)
 }
 
 /**
- * @brief 
+ * @brief Reads from a file
  * 
- * @param gid 
- * @param mid 
+ * @param FPtr 
  * @param data 
+ * @param max_size_read 
+ * @return int 
  */
-int ReadFile(FILE *FPtr, char *data, int size_read)
+int ReadFile(FILE *FPtr, char *data, int max_size_read)
 {
-  return fread(data, sizeof(char), size_read, FPtr);
+  return fread(data, sizeof(char), max_size_read, FPtr);
 }
 
 /**
- * @brief 
+ * @brief Writes to a file
  * 
- * @param gid 
- * @param mid 
+ * @param FPtr 
  * @param data 
+ * @param size_write 
  */
-void WriteToFile(FILE *FPtr, char *data, int size_read)
+void WriteToFile(FILE *FPtr, char *data, int size_write)
 {
-  fwrite(data, sizeof(char), size_read, FPtr);
+  fwrite(data, sizeof(char), size_write, FPtr);
 }
 
 /**
- * Lists Groups
+ * @brief Lists all the groups if uid = NULL, else only lists
+ * the groups the user is subscribed to
  * 
  * @param buffer
  * @return
@@ -474,43 +474,15 @@ void listGroups(char *buffer, char *uid)
 }
 
 /**
- * @brief Creates a directory
+ * @brief Creates a file with and writes data argument
  * 
- * @param DIRNAME
- * @return
- */
-int createDir(char *DIRNAME)
-{
-  char dir_name[128];
-  sprintf(dir_name, "%s", DIRNAME);
-  return mkdir(dir_name, 0700);
-}
-
-/**
- * Delete directory
- * 
- * @param DIRNAME
- * @return
- */
-int deleteDir(char *DIRNAME)
-{
-  char user_dirname[128];
-  sprintf(user_dirname, "%s", DIRNAME);
-  return rmdir(user_dirname);
-}
-
-/**
- * Creates a file
- * 
- * @param FILENAME
+ * @param filename
  * @param data
  * @return
  */
-int createFile(char *FILENAME, char *data)
+int createFile(char *filename, char *data)
 {
-  char pathname[128];
-  sprintf(pathname, "%s", FILENAME);
-  FILE *fPtr = fopen(pathname, "w");
+  FILE *fPtr = fopen(filename, "w");
   if (fPtr == NULL)
     return -1;
   if (fputs(data, fPtr) == EOF)
@@ -521,16 +493,16 @@ int createFile(char *FILENAME, char *data)
 }
 
 /**
- * Checks if has a certain content
+ * @brief Checks if file content matches data argument
  * 
- * @param FILENAME
+ * @param filename
  * @param data
  * @return
  */
-int checkFileContent(char *FILENAME, char *data)
+int checkFileContent(char *filename, char *data)
 {
   char pathname[128];
-  sprintf(pathname, "%s", FILENAME);
+  sprintf(pathname, "%s", filename);
   FILE *fPtr = fopen(pathname, "r");
   if (fPtr == NULL)
     return -1;
@@ -542,16 +514,4 @@ int checkFileContent(char *FILENAME, char *data)
   if (fclose(fPtr) == EOF)
     return -1;
   return 0;
-}
-
-/**
- * Deletes a file
- * @param FILENAME
- * @return
- */
-int deleteFile(char *FILENAME)
-{
-  char pathname[128];
-  sprintf(pathname, "%s", FILENAME);
-  return unlink(pathname);
 }
