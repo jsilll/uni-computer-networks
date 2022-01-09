@@ -35,7 +35,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 
   if (verbose)
   {
-    printf("[UDP] IP: %s PORT: %lu ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
+    printf("[UDP] IP: %s PORT: %u ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
     printf("CMD: %s", command_buffer);
   }
 
