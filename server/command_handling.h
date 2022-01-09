@@ -253,16 +253,38 @@ void handleTCPCommand(int connfd, bool verbose)
     bzero(text, sizeof(text));
     strcpy(text, &command_buffer[strlen(tsize) + 1]);
 
-    if (parseUID(uid) == -1 || (parseGID(gid) == -1) || parseTSize(tsize) == -1 || atoi(tsize) < strlen(text))
+    if (parseUID(uid) == -1 || (parseGID(gid) == -1) || parseTSize(tsize) == -1 || atoi(tsize) < strlen(text) - 1)
     {
       strcpy(buffer, "RPT NOK\n");
       write(connfd, buffer, strlen(buffer));
     }
     else
     {
-      read(connfd, &text[strlen(text)], atoi(tsize) - strlen(text));
-
       char c, mid[5];
+      if (atoi(tsize) == 1)
+      {
+        if (verbose)
+        {
+          printf("CMD: %s %s %s %s\n", op, uid, gid, tsize);
+        }
+
+        text[1] = '\0';
+        if (post(uid, gid, text, NULL, mid) == NULL)
+        {
+          strcpy(buffer, "RPT NOK\n");
+          write(connfd, buffer, strlen(buffer));
+        }
+        else
+        {
+          sprintf(buffer, "RPT %s\n", mid);
+          write(connfd, buffer, strlen(buffer));
+        }
+
+        close(connfd);
+        return;
+      }
+
+      read(connfd, &text[strlen(text)], atoi(tsize) - strlen(text));
       read(connfd, &c, 1);
       if (c == '\n')
       {
