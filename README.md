@@ -14,3 +14,5 @@
 - estamos a aceitar o GID "00" em casos em que nao se devia aceitar, faz com que o erro que enviamos ao cliente fique diferente, por exemplo mandamos "NOK" em vez de mandarmos "E_GRP"
 
 - usar int em vez de char* o mais cedo possivel nas funcoes do server
+
+- server/state/operations.c:235:22 warning do snprintf
