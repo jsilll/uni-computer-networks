@@ -12,9 +12,9 @@
  * 2-digit number (01 – 99)
  *
  * @param gid string that represents a group ID
- * @return int
+ * @return -1 on errors, 0 otherwise 
  */
-int parseGID(char *gid)
+int parseGID(char *gid) // TODO aceita o "00" em casos que comandos que nao aceitam 00
 {
   long gid_parsed = strtol(gid, NULL, 10);
   if (!strcmp(gid, "00") || (strlen(gid) == 2 && gid_parsed != 0))
@@ -27,7 +27,7 @@ int parseGID(char *gid)
  * 5-digit IST student number
  *
  * @param uid string that represents a user ID
- * @return int
+ * @return -1 on errors, 0 otherwise 
  */
 int parseUID(char *uid)
 {
@@ -45,11 +45,11 @@ int parseUID(char *uid)
  * letters and numbers
  *
  * @param password string that represents a password
- * @return int
+ * @return -1 on errors, 0 otherwise 
  */
 int parsePassword(char *password)
 {
-  regex_t re;
+  regex_t re; // TODO make this const
   if (regcomp(&re, "^[a-zA-Z0-9]{8}$", REG_EXTENDED | REG_NOSUB) != 0 || regexec(&re, password, 0, NULL, 0) != 0)
   {
     regfree(&re);
@@ -65,7 +65,7 @@ int parsePassword(char *password)
  * (plus ‘-‘, and ‘_’)
  *
  * @param gname string that represents a group name
- * @return int
+ * @return -1 on errors, 0 otherwise 
  */
 int parseGName(char *gname)
 {
@@ -84,7 +84,7 @@ int parseGName(char *gname)
  * 4-digit number
  *
  * @param mid string that represents a message ID
- * @return int
+ * @return -1 on errors, 0 otherwise 
  */
 int parseMID(char *mid)
 {
@@ -95,9 +95,11 @@ int parseMID(char *mid)
 
 /**
  * @brief Parses Tsize argument
+ * limited to a maximum of 3 characters
+ * must be in [1, 240]
  * 
- * @param tsize 
- * @return int 
+ * @param tsize string representing the text message size
+ * @return -1 on errors, 0 otherwise  
  */
 int parseTSize(char *tsize)
 {
@@ -112,8 +114,8 @@ int parseTSize(char *tsize)
 /**
  * @brief Parses the file size
  * 
- * @param size 
- * @return int 
+ * @param size string representing the file size
+ * @return -1 on errors, 0 otherwise 
  */
 int parseFileSize(char *size)
 {
@@ -129,7 +131,7 @@ int parseFileSize(char *size)
  * the 3-letter extension
  *
  * @param fname string that represents a filename
- * @return int
+ * @return -1 on errors, 0 otherwise 
  */
 int parseFName(char *fname)
 {

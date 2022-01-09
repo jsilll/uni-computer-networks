@@ -51,13 +51,13 @@ void freeAddresses()
 /**
  * @brief Opens a socket
  * 
- * @param type 
+ * @param socktype 
  * @return int 
  */
-int openSocket(int type)
+int openSocket(int socktype)
 {
   int fd;
-  if ((fd = socket(AF_INET, type, 0)) < 0)
+  if ((fd = socket(AF_INET, socktype, 0)) < 0)
   {
     fprintf(stderr, "Error opening socket.\n");
     exit(EXIT_FAILURE);
@@ -69,7 +69,7 @@ int openSocket(int type)
     exit(EXIT_FAILURE);
   }
 
-  switch (type)
+  switch (socktype)
   {
   case SOCK_DGRAM:
     if (bind(fd, ADDR_UDP->ai_addr, ADDR_UDP->ai_addrlen) == -1)

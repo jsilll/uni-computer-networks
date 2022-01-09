@@ -50,9 +50,9 @@ int main(int argc, char *argv[])
 }
 
 /**
- * @brief Signal Handler for terminating the server
+ * @brief Signal Handler for exiting the server gracefully
  * 
- * @param signal_num
+ * @param signal_num number of the signal interruption
  */
 void exitClient(int signal_num)
 {
@@ -102,7 +102,7 @@ void loadInitArgs(int argc, char *argv[])
 }
 
 /**
- * @brief Reads commands from udp and tcp clients
+ * @brief Listens for incoming commands from udp and tcp clients
  * 
  */
 void executeCommand()
@@ -158,13 +158,6 @@ void executeCommand()
 
   if (FD_ISSET(UDPFD, &RSET))
   {
-
-    //  TODO
-    if (VERBOSE)
-    {
-      // printf("[UDP] IP: %s PORT: %lu ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
-      printf("[UDP] ");
-    }
 
     handleCommandUDP(UDPFD, cliaddr, VERBOSE);
   }
