@@ -19,4 +19,4 @@ void getGName(char *gid, char *buffer);
 int ReadFile(FILE *FPtr, char *data, int size_read);
 void WriteToFile(FILE *FPtr, char *data, int size_read);
 
-#endif //RC_PROJECT_SERVER_STATE_H_
+#endif // RC_PROJECT_SERVER_STATE_H_

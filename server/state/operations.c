@@ -11,6 +11,7 @@
 void listGroups(char *buffer, char *uid);
 int createFile(char *FILENAME, char *data);
 int checkFileContent(char *FILENAME, char *data);
+int userLoggedIn(char *uid);
 
 int N_GROUPS = 0;
 char PATH_BUFFER[256];
@@ -33,7 +34,7 @@ int registerUser(char *uid, char *password)
 
 /**
  * @brief Unregisters a user from the DS server
- * 
+ *
  * @param uid
  * @param pass
  * @return
@@ -62,7 +63,7 @@ int unregisterUser(char *uid, char *pass)
 
 /**
  * @brief Logs a user in the DS server
- * 
+ *
  * @param uid
  * @param pass
  * @return
@@ -80,7 +81,7 @@ int login(char *uid, char *pass)
 
 /**
  * @brief Logs a user out of the DS server
- * 
+ *
  * @param uid
  * @param pass
  * @return
@@ -88,7 +89,7 @@ int login(char *uid, char *pass)
 int logout(char *uid, char *pass)
 {
   sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
-  if (checkFileContent(PATH_BUFFER, pass) == -1)
+  if (userLoggedIn(uid) == -1 || checkFileContent(PATH_BUFFER, pass) == -1)
     return -1; // wrong password NOK
 
   sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
@@ -104,7 +105,7 @@ int groups(char *buffer)
 
 /**
  * @brief Subscribes a user to a group
- * 
+ *
  * @param uid
  * @param gid
  * @param gname
@@ -112,7 +113,7 @@ int groups(char *buffer)
  */
 int subscribe(char *uid, char *gid, char *gname)
 {
-  if (atoi(gid) > N_GROUPS)
+  if (atoi(gid) > N_GROUPS || userLoggedIn(uid) == -1)
   {
     return -1; // E_NOK
   }
@@ -152,14 +153,14 @@ int subscribe(char *uid, char *gid, char *gname)
 
 /**
  * @brief Unsubscribes a user from a group
- * 
+ *
  * @param uid
  * @param gid
  * @return
  */
 int unsubscribe(char *uid, char *gid)
 {
-  if (atoi(gid) > N_GROUPS || atoi(gid) == 0)
+  if (atoi(gid) > N_GROUPS || userLoggedIn(uid) == -1)
     return -1; // E_NOK
 
   sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
@@ -168,19 +169,16 @@ int unsubscribe(char *uid, char *gid)
 
 /**
  * @brief Lists all the groups a user is subscribed to
- * 
+ *
  * @param uid
  * @return int
  */
 int myGroups(char *uid, char *buffer)
 {
-  // sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
-  // FILE *fptr;
-  // if ((fptr = fopen(PATH_BUFFER, "r")) == NULL)
-  // {
-  //   return -1; // NOK
-  // }
-  // fclose(fptr); TODO perguntar se login é verificado aqui ou no cliente
+  if (userLoggedIn(uid) == -1)
+  {
+    return -1;
+  }
 
   listGroups(buffer, uid);
   return 0;
@@ -188,13 +186,13 @@ int myGroups(char *uid, char *buffer)
 
 /**
  * @brief
- * 
+ *
  * @param gid
  * @return
  */
 DIR *ulist(char *gid)
 {
-  if (atoi(gid) > N_GROUPS || atoi(gid) == 0)
+  if (atoi(gid) > N_GROUPS)
   {
     return NULL;
   }
@@ -204,10 +202,10 @@ DIR *ulist(char *gid)
 }
 
 /**
- * @brief 
- * 
- * @param gid 
- * @param buffer 
+ * @brief
+ *
+ * @param gid
+ * @param buffer
  */
 void getGName(char *gid, char *buffer)
 {
@@ -220,10 +218,10 @@ void getGName(char *gid, char *buffer)
 }
 
 /**
- * @brief 
- * 
- * @param de 
- * @param buffer 
+ * @brief
+ *
+ * @param de
+ * @param buffer
  */
 void ulsAux(struct dirent *de, char *buffer)
 {
@@ -238,7 +236,7 @@ void ulsAux(struct dirent *de, char *buffer)
 
 /**
  * @brief Posts a message in a group
- * 
+ *
  * @param uid
  * @param gid
  * @param tsize
@@ -252,7 +250,7 @@ FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
 {
 
   sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
-  if (atoi(gid) == 0 || N_GROUPS < atoi(gid) || fopen(PATH_BUFFER, "r") == NULL)
+  if (N_GROUPS < atoi(gid) || userLoggedIn(uid) == -1 || fopen(PATH_BUFFER, "r") == NULL)
   {
     return NULL;
   }
@@ -287,7 +285,7 @@ FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
 
 /**
  * @brief Performs the retrieve command
- * 
+ *
  * @param uid
  * @param gid
  * @param mid
@@ -296,7 +294,7 @@ FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
 int retrieve(char *uid, char *gid, char *mid)
 {
   sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
-  if (atoi(gid) == 0 || N_GROUPS < atoi(gid) || fopen(PATH_BUFFER, "r") == NULL)
+  if (N_GROUPS < atoi(gid) || userLoggedIn(uid) == -1 || fopen(PATH_BUFFER, "r") == NULL)
   {
     return -1;
   }
@@ -368,11 +366,11 @@ FILE *retrieveAux(char *gid, int mid, char *buffer)
 
 /**
  * @brief Reads from a file
- * 
- * @param FPtr 
- * @param data 
- * @param max_size_read 
- * @return int 
+ *
+ * @param FPtr
+ * @param data
+ * @param max_size_read
+ * @return int
  */
 int ReadFile(FILE *FPtr, char *data, int max_size_read)
 {
@@ -381,10 +379,10 @@ int ReadFile(FILE *FPtr, char *data, int max_size_read)
 
 /**
  * @brief Writes to a file
- * 
- * @param FPtr 
- * @param data 
- * @param size_write 
+ *
+ * @param FPtr
+ * @param data
+ * @param size_write
  */
 void WriteToFile(FILE *FPtr, char *data, int size_write)
 {
@@ -392,9 +390,9 @@ void WriteToFile(FILE *FPtr, char *data, int size_write)
 }
 
 /**
- * @brief Lists all the groups if uid = NULL, else only lists
+ * @brief Auxiliar function that lists all the groups if uid = NULL, else only lists
  * the groups the user is subscribed to
- * 
+ *
  * @param buffer
  * @return
  */
@@ -475,7 +473,7 @@ void listGroups(char *buffer, char *uid)
 
 /**
  * @brief Creates a file with and writes data argument
- * 
+ *
  * @param filename
  * @param data
  * @return
@@ -494,7 +492,7 @@ int createFile(char *filename, char *data)
 
 /**
  * @brief Checks if file content matches data argument
- * 
+ *
  * @param filename
  * @param data
  * @return
@@ -513,5 +511,21 @@ int checkFileContent(char *filename, char *data)
     return -1;
   if (fclose(fPtr) == EOF)
     return -1;
+  return 0;
+}
+
+/**
+ * @brief Verifies if user is logged in
+ *
+ * @param uid
+ * @return int
+ */
+int userLoggedIn(char *uid)
+{
+  sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
+  if (fopen(PATH_BUFFER, "r") == NULL)
+  {
+    return -1;
+  }
   return 0;
 }

@@ -15,7 +15,7 @@ client: client/centralized_messaging/commands.o client/main.o
 client/centralized_messaging/commands.o: client/centralized_messaging/commands.c client/centralized_messaging/commands.h
 	$(CC) $(CFLAGS) -o client/centralized_messaging/commands.o -c client/centralized_messaging/commands.c
 
-client/main.o: client/main.c client/interface.h client/parsing.h
+client/main.o: client/main.c client/interface.h client/parsing.h client/command_args_parsing.h
 	$(CC) $(CFLAGS) -o client/main.o -c client/main.c
 
 

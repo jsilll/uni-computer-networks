@@ -10,14 +10,15 @@
 
 #include "parsing.h"
 #include "centralized_messaging/commands.h"
+#include "command_args_parsing.h"
 
 #define DEFAULT_PORT "58006"
+#define DEFAULT_IP "localhost"
 #define MAX_INPUT_SIZE 240 + 32
 
 char PORT[6], ADDRESS[INET6_ADDRSTRLEN];
 
 void exitClient(int signum);
-void getLocalHostAddr();
 void loadInitArgs(int argc, char *argv[]);
 void readCommand(char *line);
 
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
   signal(SIGINT, exitClient);
 
   strcpy(PORT, DEFAULT_PORT);
-  getLocalHostAddr();
+  strcpy(ADDRESS, DEFAULT_IP);
 
   loadInitArgs(argc, argv);
 
@@ -47,47 +48,13 @@ int main(int argc, char *argv[])
 
 /**
  * @brief Signal Handler for terminating the client
- * 
+ *
  * @param signum
  */
 void exitClient(int signum)
 {
   closeAllConnections();
   exit(signum);
-}
-
-/**
- * @brief Gets the local machine's ADDRESS
- * 
- */
-void getLocalHostAddr()
-{
-  struct addrinfo hints;
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;
-  hints.ai_flags = AI_CANONNAME;
-
-  char hostname_buf[128];
-  if (gethostname(hostname_buf, 128) == -1)
-  {
-    fprintf(stderr, "error: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-  }
-
-  int errcode;
-  struct addrinfo *host_addrinfo;
-  if ((errcode = getaddrinfo(hostname_buf, NULL, &hints, &host_addrinfo)))
-  {
-    free(host_addrinfo);
-    fprintf(stderr, "error: getaddrinfo: %s\n", gai_strerror(errcode));
-    exit(EXIT_FAILURE);
-  }
-
-  char buffer[INET_ADDRSTRLEN];
-  struct in_addr *addr = &((struct sockaddr_in *)host_addrinfo->ai_addr)->sin_addr;
-  strcpy(ADDRESS, inet_ntop(host_addrinfo->ai_family, addr, buffer, INET6_ADDRSTRLEN));
-
-  free(host_addrinfo);
 }
 
 /**
@@ -209,14 +176,32 @@ void readCommand(char *line)
     case 2:
       if (!strcmp(op, CMD_UNSUBSCRIBE) || !strcmp(op, CMD_UNSUBSCRIBE_SHORT))
       {
+        if (parseGID(arg1) == -1)
+        {
+          fprintf(stderr, "Invalid group id.\n");
+          return;
+        }
+
         unsubscribe(arg1);
       }
       else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT))
       {
+        if (parseGID(arg1) == -1)
+        {
+          fprintf(stderr, "Invalid group id.\n");
+          return;
+        }
+
         selectGroup(arg1);
       }
       else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
       {
+        if (parseMID(arg1) == -1)
+        {
+          fprintf(stderr, "Invalid message id.\n");
+          return;
+        }
+
         retrieve(arg1);
       }
       else
@@ -228,18 +213,67 @@ void readCommand(char *line)
     case 3:
       if (!strcmp(op, CMD_REGISTER))
       {
+        if (parseUID(arg1) == -1)
+        {
+          fprintf(stderr, "Invalid user id.\n");
+          return;
+        }
+
+        if (parsePassword(arg2) == -1)
+        {
+          fprintf(stderr, "Invalid password.\n");
+          return;
+        }
+
         registerUser(arg1, arg2);
       }
       else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
       {
+        if (parseUID(arg1) == -1)
+        {
+          fprintf(stderr, "Invalid user id.\n");
+          return;
+        }
+
+        if (parsePassword(arg2) == -1)
+        {
+          fprintf(stderr, "Invalid password.\n");
+          return;
+        }
+
         unregisterUser(arg1, arg2);
       }
       else if (!strcmp(op, CMD_LOGIN))
       {
+        if (parseUID(arg1) == -1)
+        {
+          fprintf(stderr, "Invalid user id.\n");
+          return;
+        }
+
+        if (parsePassword(arg2) == -1)
+        {
+          fprintf(stderr, "Invalid password.\n");
+          return;
+        }
+
         login(arg1, arg2);
       }
       else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT))
       {
+
+        if (parseGID(arg1) == -1 && strcmp(arg1, "0") && strcmp(arg1, "00"))
+        {
+          fprintf(stderr, "Invalid user id.\n");
+          return;
+        }
+
+        if (parseGName(arg2) == -1)
+        {
+          fprintf(stderr, "Invalid password.\n");
+          return;
+        }
+
         subscribe(arg1, arg2);
       }
       else

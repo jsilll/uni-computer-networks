@@ -13,10 +13,10 @@
 
 /**
  * @brief Handles incoming commands from a udp connection
- * 
+ *
  * @param udpfd
  * @param cliaddr
- * @param verbose 
+ * @param verbose
  */
 void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 {
@@ -103,7 +103,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
     {
       strcpy(response_buffer, "RGS E_USR\n");
     }
-    else if (parseGID(arg2) == -1)
+    else if (parseGID(arg2) == -1 && strcmp(arg2, "00"))
     {
       strcpy(response_buffer, "RGS E_GRP\n");
     }
@@ -170,9 +170,9 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
 
 /**
  * @brief Handles incoming commands from a tcp connection
- * 
- * @param connfd 
- * @param verbose 
+ *
+ * @param connfd
+ * @param verbose
  */
 void handleTCPCommand(int connfd, bool verbose)
 {
@@ -253,7 +253,7 @@ void handleTCPCommand(int connfd, bool verbose)
     bzero(text, sizeof(text));
     strcpy(text, &command_buffer[strlen(tsize) + 1]);
 
-    if (parseUID(uid) == -1 || (parseGID(gid) == -1) || parseTSize(tsize) == -1)
+    if (parseUID(uid) == -1 || parseGID(gid) == -1 || parseTSize(tsize) == -1)
     {
       if (verbose)
       {
@@ -431,4 +431,4 @@ void handleTCPCommand(int connfd, bool verbose)
   close(connfd);
 }
 
-#endif //RC_PROJECT_SERVER_COMMAND_HANDLING_H_
+#endif // RC_PROJECT_SERVER_COMMAND_HANDLING_H_

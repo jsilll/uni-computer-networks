@@ -16,3 +16,7 @@
 - usar int em vez de char* o mais cedo possivel nas funcoes do server
 
 - server/state/operations.c:235:22 warning do snprintf
+
+- parsing no client ?? mandar mail
+
+- grupos nao podem ter nomes repetidos

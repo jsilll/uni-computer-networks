@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
 /**
  * @brief Signal Handler for exiting the server gracefully
- * 
+ *
  * @param signal_num number of the signal interruption
  */
 void exitClient(int signal_num)
@@ -65,7 +65,7 @@ void exitClient(int signal_num)
 
 /**
  * @brief Parses the initial arguments for the program.
- * 
+ *
  * @param argc number of arguments in argv
  * @param argv array passed arguments
  */
@@ -104,7 +104,7 @@ void loadInitArgs(int argc, char *argv[])
 
 /**
  * @brief Listens for incoming commands from udp and tcp clients
- * 
+ *
  */
 void executeCommand()
 {
@@ -126,25 +126,6 @@ void executeCommand()
     {
       close(TCPFD);
       close(UDPFD);
-
-      // TODO
-      // struct timeval tmout;
-      // memset((char *)&tmout, 0, sizeof(tmout));
-      // tmout.tv_sec = 15;
-      // if (setsockopt(connfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
-      // {
-      //   fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-      //   exit(EXIT_FAILURE);
-      // }
-
-      // TODO
-      // memset((char *)&tmout, 0, sizeof(tmout));
-      // tmout.tv_sec = 15;
-      // if (setsockopt(connfd, SOL_SOCKET, SO_SNDTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
-      // {
-      //   fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
-      //   exit(EXIT_FAILURE);
-      // }
 
       if (VERBOSE)
       {
