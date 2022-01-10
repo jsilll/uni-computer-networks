@@ -18,7 +18,7 @@ struct addrinfo *ADDR_UDP, *ADDR_TCP;
 // TODO unecessarily large bzeros
 
 /**
- * @brief Sets up the UDP socket
+ * @brief Sets up the udp and tcp server addresses
  *
  * @param ip
  * @param port
@@ -136,7 +136,7 @@ void closeAllConnections()
 }
 
 /**
- * @brief Registers a user
+ * @brief Registers a user in the server
  *
  * @param uid
  * @param pass
@@ -145,11 +145,25 @@ void registerUser(char *uid, char *password)
 {
     sprintf(COMMAND_BUFFER, "REG %05d %s\n", atoi(uid), password);
     sendCommandUDP();
-    printf("%s", RESPONSE_BUFFER);
+
+    char op[4], status[4];
+    sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
+    if (!strcmp(status, "NOK"))
+    {
+        fprintf(stderr, "Invalid UID and/or password.\n");
+    }
+    else if (!strcmp(status, "DUP"))
+    {
+        fprintf(stderr, "User already registered.\n");
+    }
+    else
+    {
+        printf("User registered successfully.\n");
+    }
 }
 
 /**
- * @brief Unregsiters a user
+ * @brief Unregsiters a user from the server
  *
  * @param uid
  * @param password
@@ -158,11 +172,24 @@ void unregisterUser(char *uid, char *password)
 {
     sprintf(COMMAND_BUFFER, "UNR %05d %s\n", atoi(uid), password);
     sendCommandUDP();
-    printf("%s", RESPONSE_BUFFER);
 
-    if (LOGGED_IN && (atoi(UID) == atoi(uid)) && !strcmp(password, PASSWORD))
+    char op[4], status[4];
+    sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
+    if (!strcmp(status, "NOK"))
+    {
+        fprintf(stderr, "Invalid UID and/or password, or user doesn't exist.\n");
+    }
+    else
+    {
+        printf("User unregistered successfully.\n");
+    }
+
+    if (LOGGED_IN && !strcmp(uid, UID) && !strcmp(password, PASSWORD))
     {
         LOGGED_IN = false;
+        bzero(UID, sizeof(UID));
+        bzero(PASSWORD, sizeof(PASSWORD));
+        printf("Logged out successfully.\n");
     }
 }
 
@@ -176,18 +203,26 @@ void login(char *uid, char *password)
 {
     if (LOGGED_IN)
     {
-        fprintf(stderr, "User needs to logout first.\n");
+        fprintf(stderr, "[LOCAL] User needs to logout first.\n");
         return;
     }
 
     sprintf(COMMAND_BUFFER, "LOG %05d %s\n", atoi(uid), password);
     sendCommandUDP();
-    printf("%s", RESPONSE_BUFFER);
-    if (!strcmp(RESPONSE_BUFFER, "RLO OK\n"))
+
+    char op[4], status[4];
+    sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
+    if (!strcmp(status, "NOK"))
+    {
+        fprintf(stderr, "Invalid UID and/or password, or user doesn't exist.\n");
+    }
+    else
     {
         LOGGED_IN = true;
-        sprintf(UID, "%05d", atoi(uid));
+        strncpy(UID, uid, sizeof(UID) - 1);
         strncpy(PASSWORD, password, sizeof(PASSWORD) - 1);
+
+        printf("User logged in successfully.\n");
     }
 }
 
@@ -199,18 +234,25 @@ void logout()
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User needs to be logged in.\n");
+        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
         return;
     }
 
     sprintf(COMMAND_BUFFER, "OUT %s %s\n", UID, PASSWORD);
     sendCommandUDP();
-    printf("%s", RESPONSE_BUFFER);
-    if (!strcmp(RESPONSE_BUFFER, "ROU OK\n"))
+
+    char op[4], status[4];
+    sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
+    if (!strcmp(status, "NOK"))
+    {
+        fprintf(stderr, "Invalid UID and/or password, or user doesn't exist.\n");
+    }
+    else
     {
         LOGGED_IN = false;
         bzero(UID, sizeof(UID));
         bzero(PASSWORD, sizeof(PASSWORD));
+        printf("Logged out successfully.\n");
     }
 }
 
@@ -222,11 +264,11 @@ void showUID()
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User needs to be logged in.\n");
+        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
         return;
     }
 
-    printf("[LOCAL] UID: %s\n", UID);
+    printf("[LOCAL] Currently selected UID: %s\n", UID);
 }
 
 /**
@@ -237,7 +279,20 @@ void groups()
 {
     sprintf(COMMAND_BUFFER, "GLS\n");
     sendCommandUDP(COMMAND_BUFFER, RESPONSE_BUFFER);
-    printf("%s", RESPONSE_BUFFER);
+
+    char op[4], n[3];
+    sscanf(RESPONSE_BUFFER, "%3s %2s", op, n);
+    printf("%d group(s):\n", atoi(n));
+
+    int base = strlen(op) + strlen(n) + 2, last_read_size = 0;
+    char gid[3], gname[25], mid[5];
+    for (int i = 0; i < atoi(n); i++)
+    {
+        base += last_read_size;
+        sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
+        last_read_size = 2 + strlen(gname) + 4 + 3;
+        printf("%s %s %s\n", gid, gname, mid);
+    }
 }
 
 /**
@@ -250,13 +305,45 @@ void subscribe(char *gid, char *gname)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User needs to be logged in.\n");
+        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
         return;
     }
 
     sprintf(COMMAND_BUFFER, "GSR %s %02d %s\n", UID, atoi(gid), gname);
     sendCommandUDP();
-    printf("%s", RESPONSE_BUFFER);
+
+    char op[4], status[9];
+    sscanf(RESPONSE_BUFFER, "%3s %8s", op, status);
+    if (!strcmp(status, "E_USR"))
+    {
+        fprintf(stderr, "Invalid UID.\n");
+    }
+    else if (!strcmp(status, "E_GRP"))
+    {
+        fprintf(stderr, "Invalid GID.\n");
+    }
+    else if (!strcmp(status, "E_GNAME"))
+    {
+        fprintf(stderr, "Invalid GName.\n");
+    }
+    else if (!strcmp(status, "NOK"))
+    {
+        fprintf(stderr, "Unexpected error occurred.\n");
+    }
+    else if (!strcmp(status, "FULL"))
+    {
+        fprintf(stderr, "Maximum number of groups reached.\n");
+    }
+    else if (!strcmp(status, "NEW"))
+    {
+        int n;
+        sscanf(&RESPONSE_BUFFER[7], "%d", &n);
+        printf("New group created: %d.\n", n);
+    }
+    else
+    {
+        printf("Subscribed to group successfully.\n");
+    }
 }
 
 /**
@@ -268,13 +355,31 @@ void unsubscribe(char *gid)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User needs to be logged in.\n");
+        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "GUR %s %02d\n", UID, atoid(gid));
+    sprintf(COMMAND_BUFFER, "GUR %s %02d\n", UID, atoi(gid));
     sendCommandUDP();
-    printf("%s", RESPONSE_BUFFER);
+
+    char op[4], status[9];
+    sscanf(RESPONSE_BUFFER, "%3s %8s", op, status);
+    if (!strcmp(status, "E_USR"))
+    {
+        fprintf(stderr, "Invalid UID.\n");
+    }
+    else if (!strcmp(status, "E_GRP"))
+    {
+        fprintf(stderr, "Invalid GID.\n");
+    }
+    else if (!strcmp(status, "NOK"))
+    {
+        fprintf(stderr, "Group doesn't exist.\n");
+    }
+    else
+    {
+        printf("Unsubscribed from group successfully.\n");
+    }
 }
 
 /**
@@ -285,13 +390,26 @@ void myGroups()
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User needs to be logged in.\n");
+        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
         return;
     }
 
     sprintf(COMMAND_BUFFER, "GLM %s\n", UID);
     sendCommandUDP();
-    printf("%s", RESPONSE_BUFFER);
+
+    char op[4], n[3];
+    sscanf(RESPONSE_BUFFER, "%3s %2s", op, n);
+    printf("You have %d groups:\n", atoi(n));
+
+    int base = strlen(op) + strlen(n) + 2, last_read_size = 0;
+    char gid[3], gname[25], mid[5];
+    for (int i = 0; i < atoi(n); i++)
+    {
+        base += last_read_size;
+        sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
+        last_read_size = 2 + strlen(gname) + 4 + 3;
+        printf("%s %s %s\n", gid, gname, mid);
+    }
 }
 
 /**
@@ -349,11 +467,22 @@ void ulist()
         return;
     }
 
+    bzero(RESPONSE_BUFFER, 8);
+    read(sockfd, RESPONSE_BUFFER, 7);
+    char op[4], status[4];
+    sscanf(RESPONSE_BUFFER, "%s %s", op, status);
+    if (!strcmp(status, "NOK"))
+    {
+        close(sockfd);
+        fprintf(stderr, "Invalid GID.\n");
+        return;
+    }
+
     int n;
     bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
     while ((n = read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER))) > 0)
     {
-        printf("%s", RESPONSE_BUFFER);
+        printf("%s", RESPONSE_BUFFER); // TODO tem um espaço a mais??
         bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
     }
 
@@ -409,7 +538,19 @@ void post(char *message, char *fname)
             return;
         }
 
-        printf("%s", RESPONSE_BUFFER);
+        close(sockfd);
+
+        char op[4], status[5];
+        sscanf(RESPONSE_BUFFER, "%s %s", op, status);
+        if (!strcmp(status, "NOK"))
+        {
+            fprintf(stderr, "Unknown error occurred.\n");
+        }
+        else
+        {
+            printf("%s\n", status);
+            printf("Successfully posted message %d in group %s.\n", atoi(status), GID);
+        }
         return;
     }
 
@@ -483,7 +624,16 @@ void post(char *message, char *fname)
 
     close(sockfd);
 
-    printf("%s", RESPONSE_BUFFER);
+    char op[4], status[5];
+    sscanf(RESPONSE_BUFFER, "%s %s", op, status);
+    if (!strcmp(status, "NOK"))
+    {
+        fprintf(stderr, "Unknown error occurred.\n");
+    }
+    else
+    {
+        printf("Successfully posted message %d in group %s.\n", atoi(status), GID);
+    }
 }
 
 /**
@@ -557,7 +707,7 @@ void retrieve(char *mid)
 
     int n_msg;
     fscanf(tmpfptr, "%d ", &n_msg);
-    printf("%s %s %d\n", op, status, n_msg);
+    printf("Retrieving %d message(s) from group %s.\n", n_msg, GID);
 
     for (int i = 0; i < n_msg; i++)
     {
