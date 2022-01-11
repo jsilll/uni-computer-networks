@@ -17,13 +17,13 @@ bool VERBOSE;
 int TCPFD, UDPFD;
 fd_set RSET;
 
-void exitClient(int signal_num);
+void signalHandler(int signum);
 void loadInitArgs(int argc, char *argv[]);
 void executeCommand();
 
 int main(int argc, char *argv[])
 {
-  signal(SIGINT, exitClient);
+  signal(SIGINT, signalHandler);
 
   strcpy(PORT, DEFAULT_PORT);
   VERBOSE = false;
@@ -52,15 +52,16 @@ int main(int argc, char *argv[])
 /**
  * @brief Signal Handler for exiting the server gracefully
  *
- * @param signal_num number of the signal interruption
+ * @param signum number of the signal interruption
  */
-void exitClient(int signal_num)
+void signalHandler(int signum)
 {
   // TODO remove GROUPS and USERS folders
+  printf("Exiting Centralized Messaging Server.\n");
   close(TCPFD);
   close(UDPFD);
   freeAddresses();
-  exit(signal_num);
+  exit(signum);
 }
 
 /**
@@ -129,7 +130,7 @@ void executeCommand()
 
       if (VERBOSE)
       {
-        printf("[TCP] IP: %s PORT: %u ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
+        printf("[TCP] IP: %s PORT: %05u ", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
       }
 
       handleTCPCommand(connfd, VERBOSE);

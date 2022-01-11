@@ -86,11 +86,18 @@ int login(char *uid, char *pass)
  * @param pass
  * @return
  */
-int logout(char *uid, char *pass)
+int logout(char *uid, char *password)
 {
+  if (userLoggedIn(uid) == -1)
+  {
+    return -1; // NOK
+  }
+
   sprintf(PATH_BUFFER, "USERS/%s/password.txt", uid);
-  if (userLoggedIn(uid) == -1 || checkFileContent(PATH_BUFFER, pass) == -1)
-    return -1; // wrong password NOK
+  if (checkFileContent(PATH_BUFFER, password) == -1)
+  {
+    return -1; // NOK
+  }
 
   sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
   unlink(PATH_BUFFER);
@@ -248,21 +255,28 @@ void ulsAux(struct dirent *de, char *buffer)
  */
 FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
 {
-
-  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
-  if (N_GROUPS < atoi(gid) || userLoggedIn(uid) == -1 || fopen(PATH_BUFFER, "r") == NULL)
+  if (N_GROUPS < atoi(gid) || userLoggedIn(uid) == -1)
   {
     return NULL;
   }
 
+  FILE *fptr;
+  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
+  if ((fptr = fopen(PATH_BUFFER, "r")) == NULL)
+  {
+
+    return NULL;
+  }
+  fclose(fptr);
+
   sprintf(PATH_BUFFER, "GROUPS/%s/MSG/num_msg.txt", gid);
-  FILE *FPtr = fopen(PATH_BUFFER, "r+");
+  fptr = fopen(PATH_BUFFER, "r+");
   bzero(mid, 5);
-  fread(mid, sizeof(char), 4, FPtr);
+  fread(mid, sizeof(char), 4, fptr);
   sprintf(mid, "%04d", atoi(mid) + 1);
-  fseek(FPtr, 0, SEEK_SET);
-  fputs(mid, FPtr);
-  fclose(FPtr);
+  fseek(fptr, 0, SEEK_SET);
+  fputs(mid, fptr);
+  fclose(fptr);
 
   sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%s", gid, mid);
   mkdir(PATH_BUFFER, 0700);
@@ -280,7 +294,7 @@ FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
     return fopen(PATH_BUFFER, "wb");
   }
 
-  return FPtr;
+  return fptr;
 }
 
 /**
@@ -293,18 +307,25 @@ FILE *post(char *uid, char *gid, char *text, char *fname, char *mid)
  */
 int retrieve(char *uid, char *gid, char *mid)
 {
-  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
-  if (N_GROUPS < atoi(gid) || userLoggedIn(uid) == -1 || fopen(PATH_BUFFER, "r") == NULL)
+  if (N_GROUPS < atoi(gid) || userLoggedIn(uid) == -1)
   {
     return -1;
   }
 
+  FILE *fptr;
+  sprintf(PATH_BUFFER, "GROUPS/%s/%s.txt", gid, uid);
+  if ((fptr = fopen(PATH_BUFFER, "r")) == NULL)
+  {
+    return -1;
+  }
+  fclose(fptr);
+
   sprintf(PATH_BUFFER, "GROUPS/%s/MSG/num_msg.txt", gid);
-  FILE *FPtr = fopen(PATH_BUFFER, "r");
+  fptr = fopen(PATH_BUFFER, "r");
 
   char n_msg[5];
-  fread(n_msg, sizeof(char), 5, FPtr);
-  fclose(FPtr);
+  fread(n_msg, sizeof(char), 5, fptr);
+  fclose(fptr);
 
   if (atoi(n_msg) == 0)
   {
@@ -499,18 +520,19 @@ int createFile(char *filename, char *data)
  */
 int checkFileContent(char *filename, char *data)
 {
-  char pathname[128];
-  sprintf(pathname, "%s", filename);
-  FILE *fPtr = fopen(pathname, "r");
-  if (fPtr == NULL)
+  FILE *fptr = fopen(filename, "r");
+  if (fptr == NULL)
+  {
     return -1;
+  }
   char file_data[25];
-  bzero(file_data, 25);
-  fread(file_data, sizeof(char), 24, fPtr);
+  bzero(file_data, sizeof(file_data));
+  fread(file_data, sizeof(char), 24, fptr);
+  fclose(fptr);
   if (strcmp(data, file_data))
+  {
     return -1;
-  if (fclose(fPtr) == EOF)
-    return -1;
+  }
   return 0;
 }
 
@@ -523,9 +545,11 @@ int checkFileContent(char *filename, char *data)
 int userLoggedIn(char *uid)
 {
   sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
-  if (fopen(PATH_BUFFER, "r") == NULL)
+  FILE *fptr;
+  if ((fptr = fopen(PATH_BUFFER, "r")) == NULL)
   {
     return -1;
   }
+  fclose(fptr);
   return 0;
 }
