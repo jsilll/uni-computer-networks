@@ -47,9 +47,3 @@ clean:
 	@echo Cleaning...
 	$(RM) -r $(CLIENT_BIN_DIR)/* $(CLIENT_OBJ_DIR)/*
 	$(RM) -r $(SERVER_BIN_DIR)/* $(SERVER_OBJ_DIR)/*
-
-# count:
-# 	find . -wholename '*/client/*.c' | xargs wc -l | grep total
-# 	find . -wholename '*/client/*.h' | xargs wc -l | grep total
-# 	find . -wholename '*/server/*.c' | xargs wc -l | grep total
-# 	find . -wholename '*/server/*.h' | xargs wc -l | grep total
