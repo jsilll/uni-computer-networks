@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include "command_args_parsing.h"
-#include "state/operations.h"
+#include "operations.h"
 
 /**
  * @brief Handles incoming commands from a udp connection

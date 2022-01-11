@@ -3,39 +3,53 @@ LD=gcc
 CFLAGS=-g -Wall -std=gnu99
 LDFLAGS=-lm
 
+SRC_DIR=src
+OBJ_DIR=obj
+BIN_DIR=bin
 
-.PHONY: all clean run
+CLIENT_DIR=client
+CLIENT_BIN=client
+CLIENT_SRC_DIR=$(CLIENT_DIR)/$(SRC_DIR)
+CLIENT_OBJ_DIR=$(CLIENT_DIR)/$(OBJ_DIR)
+CLIENT_BIN_DIR=$(CLIENT_DIR)/$(BIN_DIR)
+CLIENT_SRCS=$(wildcard $(CLIENT_SRC_DIR)/*.c)
+CLIENT_OBJS=$(patsubst $(CLIENT_SRC_DIR)/%.c, $(CLIENT_OBJ_DIR)/%.o,\
+$(CLIENT_SRCS))
 
-all: client server
+SERVER_DIR=server
+SERVER_BIN=server
+SERVER_SRC_DIR=$(SERVER_DIR)/$(SRC_DIR)
+SERVER_OBJ_DIR=$(SERVER_DIR)/$(OBJ_DIR)
+SERVER_BIN_DIR=$(SERVER_DIR)/$(BIN_DIR)
+SERVER_SRCS=$(wildcard $(SERVER_SRC_DIR)/*.c)
+SERVER_OBJS=$(patsubst $(SERVER_SRC_DIR)/%.c, $(SERVER_OBJ_DIR)/%.o,\
+$(SERVER_SRCS))
 
+.PHONY: all clean 
 
-client: client/centralized_messaging/commands.o client/main.o
-	$(LD) $(CFLAGS) $(LDFLAGS) -o client/client client/centralized_messaging/commands.o client/main.o
+all: $(CLIENT_BIN_DIR)/$(CLIENT_BIN) $(SERVER_BIN_DIR)/$(SERVER_BIN)
 
-client/centralized_messaging/commands.o: client/centralized_messaging/commands.c client/centralized_messaging/commands.h
-	$(CC) $(CFLAGS) -o client/centralized_messaging/commands.o -c client/centralized_messaging/commands.c
+# Client
+$(CLIENT_BIN_DIR)/$(CLIENT_BIN): $(CLIENT_OBJS)
+	$(CC) $(CFLAGS) $(CLIENT_OBJS) -o $@
 
-client/main.o: client/main.c client/interface.h client/parsing.h client/command_args_parsing.h
-	$(CC) $(CFLAGS) -o client/main.o -c client/main.c
+$(CLIENT_OBJ_DIR)/%.o: $(CLIENT_SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
+# Server
+$(SERVER_BIN_DIR)/$(SERVER_BIN): $(SERVER_OBJS)
+	$(CC) $(CFLAGS) $(SERVER_OBJS) -o $@
 
-server: server/state/operations.o server/main.o
-	$(LD) $(CFLAGS) $(LDFLAGS) -o server/server server/state/operations.o server/main.o
+$(SERVER_OBJ_DIR)/%.o: $(SERVER_SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-server/state/operations.o: server/state/operations.c server/state/operations.h 
-	$(CC) $(CFLAGS) -o server/state/operations.o -c server/state/operations.c
-
-server/main.o: server/main.c server/connection.h server/command_handling.h server/parsing.h server/command_args_parsing.h
-	$(CC) $(CFLAGS) -o server/main.o -c server/main.c
-
-
-clean:
+clean: 
 	@echo Cleaning...
-	rm -f client/*.o client/centralized_messaging/*.o client/client
-	rm -f server/*.o server/state/*.o server/server
+	$(RM) -r $(CLIENT_BIN_DIR)/* $(CLIENT_OBJ_DIR)/*
+	$(RM) -r $(SERVER_BIN_DIR)/* $(SERVER_OBJ_DIR)/*
 
-count:
-	find . -wholename '*/client/*.c' | xargs wc -l | grep total
-	find . -wholename '*/client/*.h' | xargs wc -l | grep total
-	find . -wholename '*/server/*.c' | xargs wc -l | grep total
-	find . -wholename '*/server/*.h' | xargs wc -l | grep total
+# count:
+# 	find . -wholename '*/client/*.c' | xargs wc -l | grep total
+# 	find . -wholename '*/client/*.h' | xargs wc -l | grep total
+# 	find . -wholename '*/server/*.c' | xargs wc -l | grep total
+# 	find . -wholename '*/server/*.h' | xargs wc -l | grep total

@@ -10,7 +10,7 @@
 #include <libgen.h>
 
 #include "parsing.h"
-#include "centralized_messaging/commands.h"
+#include "commands.h"
 #include "command_args_parsing.h"
 
 #define DEFAULT_PORT "58006"
