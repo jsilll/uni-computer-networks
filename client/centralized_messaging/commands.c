@@ -12,7 +12,8 @@
 // TODO interface.h?
 
 bool LOGGED_IN = false, GROUP_SELECTED = false;
-char UID[6], PASSWORD[9], GID[3];                // TODO 8 16 4
+int UID = 0, GID = 0;
+char PASSWORD[9] = {'\0'};                       // TODO 8 16 4
 char COMMAND_BUFFER[512], RESPONSE_BUFFER[3274]; // TODO 4096
 struct addrinfo *ADDR_UDP, *ADDR_TCP;
 // TODO unecessarily large bzeros
@@ -128,11 +129,10 @@ int openTCPSocket()
  * @brief Exits the client
  *
  */
-void closeAllConnections()
+void freeServerAddresses()
 {
     free(ADDR_UDP);
     free(ADDR_TCP);
-    printf("[LOCAL] exiting client.\n");
 }
 
 /**
@@ -141,9 +141,9 @@ void closeAllConnections()
  * @param uid
  * @param pass
  */
-void registerUser(char *uid, char *password)
+void registerUser(int uid, char *password)
 {
-    sprintf(COMMAND_BUFFER, "REG %05d %s\n", atoi(uid), password);
+    sprintf(COMMAND_BUFFER, "REG %05d %s\n", uid, password);
     sendCommandUDP();
 
     char op[4], status[4];
@@ -168,9 +168,9 @@ void registerUser(char *uid, char *password)
  * @param uid
  * @param password
  */
-void unregisterUser(char *uid, char *password)
+void unregisterUser(int uid, char *password)
 {
-    sprintf(COMMAND_BUFFER, "UNR %05d %s\n", atoi(uid), password);
+    sprintf(COMMAND_BUFFER, "UNR %05d %s\n", uid, password);
     sendCommandUDP();
 
     char op[4], status[4];
@@ -184,10 +184,10 @@ void unregisterUser(char *uid, char *password)
         printf("User unregistered successfully.\n");
     }
 
-    if (LOGGED_IN && !strcmp(uid, UID) && !strcmp(password, PASSWORD))
+    if (LOGGED_IN && uid == UID && !strcmp(password, PASSWORD))
     {
         LOGGED_IN = false;
-        bzero(UID, sizeof(UID));
+        UID = 0;
         bzero(PASSWORD, sizeof(PASSWORD));
         printf("Logged out successfully.\n");
     }
@@ -199,7 +199,7 @@ void unregisterUser(char *uid, char *password)
  * @param uid
  * @param password
  */
-void login(char *uid, char *password)
+void login(int uid, char *password)
 {
     if (LOGGED_IN)
     {
@@ -207,7 +207,7 @@ void login(char *uid, char *password)
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "LOG %05d %s\n", atoi(uid), password);
+    sprintf(COMMAND_BUFFER, "LOG %05d %s\n", uid, password);
     sendCommandUDP();
 
     char op[4], status[4];
@@ -219,7 +219,7 @@ void login(char *uid, char *password)
     else
     {
         LOGGED_IN = true;
-        strncpy(UID, uid, sizeof(UID) - 1);
+        UID = uid;
         strncpy(PASSWORD, password, sizeof(PASSWORD) - 1);
 
         printf("User logged in successfully.\n");
@@ -238,7 +238,7 @@ void logout()
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "OUT %s %s\n", UID, PASSWORD);
+    sprintf(COMMAND_BUFFER, "OUT %05d %s\n", UID, PASSWORD);
     sendCommandUDP();
 
     char op[4], status[4];
@@ -250,7 +250,7 @@ void logout()
     else
     {
         LOGGED_IN = false;
-        bzero(UID, sizeof(UID));
+        UID = 0;
         bzero(PASSWORD, sizeof(PASSWORD));
         printf("Logged out successfully.\n");
     }
@@ -268,7 +268,7 @@ void showUID()
         return;
     }
 
-    printf("[LOCAL] Currently selected UID: %s\n", UID);
+    printf("[LOCAL] Currently selected UID: %d\n", UID);
 }
 
 /**
@@ -291,7 +291,7 @@ void groups()
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
         last_read_size = 2 + strlen(gname) + 4 + 3;
-        printf("%s %s %s\n", gid, gname, mid);
+        printf("%s %s %s\n", gid, gname, mid); // TODO atoi()??
     }
 }
 
@@ -301,7 +301,7 @@ void groups()
  * @param gid
  * @param gname
  */
-void subscribe(char *gid, char *gname)
+void subscribe(int gid, char *gname)
 {
     if (!LOGGED_IN)
     {
@@ -309,7 +309,7 @@ void subscribe(char *gid, char *gname)
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "GSR %s %02d %s\n", UID, atoi(gid), gname);
+    sprintf(COMMAND_BUFFER, "GSR %05d %02d %s\n", UID, gid, gname);
     sendCommandUDP();
 
     char op[4], status[9];
@@ -351,7 +351,7 @@ void subscribe(char *gid, char *gname)
  *
  * @param gid
  */
-void unsubscribe(char *gid)
+void unsubscribe(int gid)
 {
     if (!LOGGED_IN)
     {
@@ -359,7 +359,7 @@ void unsubscribe(char *gid)
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "GUR %s %02d\n", UID, atoi(gid));
+    sprintf(COMMAND_BUFFER, "GUR %05d %02d\n", UID, gid);
     sendCommandUDP();
 
     char op[4], status[9];
@@ -394,12 +394,12 @@ void myGroups()
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "GLM %s\n", UID);
+    sprintf(COMMAND_BUFFER, "GLM %05d\n", UID);
     sendCommandUDP();
 
     char op[4], n[3];
     sscanf(RESPONSE_BUFFER, "%3s %2s", op, n);
-    printf("You have %d groups:\n", atoi(n));
+    printf("%d group(s):\n", atoi(n));
 
     int base = strlen(op) + strlen(n) + 2, last_read_size = 0;
     char gid[3], gname[25], mid[5];
@@ -408,7 +408,7 @@ void myGroups()
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
         last_read_size = 2 + strlen(gname) + 4 + 3;
-        printf("%s %s %s\n", gid, gname, mid);
+        printf("%s %s %s\n", gid, gname, mid); // TODO atoi()??
     }
 }
 
@@ -417,11 +417,11 @@ void myGroups()
  *
  * @param gid
  */
-void selectGroup(char *gid)
+void selectGroup(int gid)
 {
     GROUP_SELECTED = true;
-    sprintf(GID, "%02d", atoi(gid));
-    printf("[LOCAL] %s is now selected.\n", GID);
+    GID = gid;
+    printf("[LOCAL] %02d is now selected.\n", GID);
 }
 
 /**
@@ -436,7 +436,7 @@ void showGID()
     }
     else
     {
-        printf("[LOCAL] GID: %s\n", GID);
+        printf("[LOCAL] GID: %02d\n", GID);
     }
 }
 
@@ -446,7 +446,7 @@ void showGID()
  */
 void ulist()
 {
-    sprintf(COMMAND_BUFFER, "ULS %s\n", GID);
+    sprintf(COMMAND_BUFFER, "ULS %02d\n", GID);
 
     int sockfd;
     if ((sockfd = openTCPSocket()) == -1)
@@ -467,8 +467,9 @@ void ulist()
         return;
     }
 
+    int n;
     bzero(RESPONSE_BUFFER, 8);
-    read(sockfd, RESPONSE_BUFFER, 7);
+    n = read(sockfd, RESPONSE_BUFFER, 7);
     char op[4], status[4];
     sscanf(RESPONSE_BUFFER, "%s %s", op, status);
     if (!strcmp(status, "NOK"))
@@ -478,11 +479,15 @@ void ulist()
         return;
     }
 
-    int n;
+    if (n == 6)
+    {
+        read(sockfd, RESPONSE_BUFFER, 1);
+    }
+
     bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
     while ((n = read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER))) > 0)
     {
-        printf("%s", RESPONSE_BUFFER); // TODO tem um espaço a mais??
+        printf("%s", RESPONSE_BUFFER);
         bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
     }
 
@@ -522,7 +527,7 @@ void post(char *message, char *fname)
 
     if (fname == NULL)
     {
-        sprintf(COMMAND_BUFFER, "PST %s %s %lu %s\n", UID, GID, strlen(message), message);
+        sprintf(COMMAND_BUFFER, "PST %05d %02d %lu %s\n", UID, GID, strlen(message), message);
         if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
         {
             close(sockfd);
@@ -548,8 +553,7 @@ void post(char *message, char *fname)
         }
         else
         {
-            printf("%s\n", status);
-            printf("Successfully posted message %d in group %s.\n", atoi(status), GID);
+            printf("Posted in group %d successfully, message id is %d.\n", GID, atoi(status));
         }
         return;
     }
@@ -564,7 +568,7 @@ void post(char *message, char *fname)
     long fsize = ftell(fptr);
     rewind(fptr);
 
-    sprintf(COMMAND_BUFFER, "PST %s %s %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), fsize);
+    sprintf(COMMAND_BUFFER, "PST %05d %02d %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), fsize);
     printf("%s\n", COMMAND_BUFFER);
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
@@ -632,7 +636,7 @@ void post(char *message, char *fname)
     }
     else
     {
-        printf("Successfully posted message %d in group %s.\n", atoi(status), GID);
+        printf("Posted in group %d successfully, message id is %d.\n", GID, atoi(status));
     }
 }
 
@@ -641,7 +645,7 @@ void post(char *message, char *fname)
  *
  * @param mid
  */
-void retrieve(char *mid)
+void retrieve(int mid)
 {
     if (!LOGGED_IN)
     {
@@ -661,7 +665,7 @@ void retrieve(char *mid)
         return;
     }
 
-    sprintf(COMMAND_BUFFER, "RTV %s %s %04d\n", UID, GID, atoi(mid));
+    sprintf(COMMAND_BUFFER, "RTV %05d %02d %04d\n", UID, GID, mid);
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(sockfd);
@@ -707,7 +711,7 @@ void retrieve(char *mid)
 
     int n_msg;
     fscanf(tmpfptr, "%d ", &n_msg);
-    printf("Retrieving %d message(s) from group %s.\n", n_msg, GID);
+    printf("Retrieving %d message(s) from group %d.\n", n_msg, GID);
 
     for (int i = 0; i < n_msg; i++)
     {
@@ -715,7 +719,7 @@ void retrieve(char *mid)
         fscanf(tmpfptr, "%4s %5s %3s", curr_mid, uid, tsize);
 
         char path_buffer[256];
-        sprintf(path_buffer, "GROUP%s_MSG%s.txt", GID, curr_mid);
+        sprintf(path_buffer, "GROUP_%02d_MSG_%s.txt", GID, curr_mid);
         FILE *msgfptr = fopen(path_buffer, "w");
 
         fgetc(tmpfptr);
@@ -745,7 +749,7 @@ void retrieve(char *mid)
             char fname[25], fsize[11];
             fscanf(tmpfptr, "%24s %10s", fname, fsize);
 
-            printf(" %s %s", fname, fsize);
+            printf(" %s %s Bytes", fname, fsize);
 
             fgetc(tmpfptr);
             int iter = atoi(fsize);

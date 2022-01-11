@@ -14,7 +14,7 @@
  */
 int parseGID(char *gid)
 {
-  long gid_parsed = strtol(gid, NULL, 10);
+  int gid_parsed = atoi(gid);
   if (gid_parsed > 0 && gid_parsed <= 99)
     return 0;
   return -1;
@@ -29,7 +29,7 @@ int parseGID(char *gid)
  */
 int parseUID(char *uid)
 {
-  int uid_parsed = strtol(uid, NULL, 10);
+  int uid_parsed = atoi(uid);
   if (uid_parsed <= 0 || uid_parsed > 99999)
     return -1;
   return 0;
@@ -84,7 +84,7 @@ int parseGName(char *gname)
  */
 int parseMID(char *mid)
 {
-  long parsedMid = strtol(mid, NULL, 10);
+  int parsedMid = atoi(mid);
   if (parsedMid <= 0 || parsedMid > 9999)
     return -1;
   return 0;

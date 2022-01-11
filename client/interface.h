@@ -1,7 +1,7 @@
 #ifndef CLIENT_CLIENT_INTERFACE_H
 #define CLIENT_CLIENT_INTERFACE_H
 
-/* Input Commands */
+/* Commands */
 const char CMD_REGISTER[] = "reg";
 const char CMD_UNREGISTER[] = "unregister";
 const char CMD_UNREGISTER_SHORT[] = "unr";
@@ -28,10 +28,18 @@ const char CMD_POST[] = "post";
 const char CMD_RETRIEVE[] = "retrieve";
 const char CMD_RETRIEVE_SHORT[] = "r";
 
-/* Output Messages */
-const char ERR_INVALID_IP[] = "Address isn't a valid IP, checking if it's a valid address\n";
-const char ERR_INVALID_PORT[] = "Invalid value for port argument\n";
-const char ERR_UNKNOWN_CMD[] = "Unknown command\n";
-const char ERR_INVALID_POST_CMD[] = "Invalid post command\n";
+/* Info Messages */
+const char MSG_NOT_IP[] = "Address isn't a valid IP, checking if it's a valid address.\n";
+
+/* Error Messages */
+const char ERR_INVALID_PORT[] = "Invalid value for port argument.\n";
+const char ERR_UNKNOWN_CMD[] = "Unknown command.\n";
+const char ERR_INVALID_POST_CMD[] = "Invalid post command.\n";
+const char ERR_INVALID_TXT_MSG[] = "Message exceeds 240 characters.\n";
+const char ERR_INVALID_FNAME[] = "Invalid filename argument.\n";
+const char ERR_INVALID_GID[] = "Invalid group id.\n";
+const char ERR_INVALID_MID[] = "Invalid message id.\n";
+const char ERR_INVALID_UID[] = "Invalid user id.\n";
+const char ERR_INVALID_PASSWD[] = "Invalid password.\n";
 
 #endif //CLIENT_CLIENT_INTERFACE_H

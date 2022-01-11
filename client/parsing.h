@@ -18,7 +18,7 @@ void parseIPArg(char *ip)
 {
   if (!inet_pton(AF_INET, ip, NULL))
   {
-    fprintf(stderr, ERR_INVALID_IP);
+    fprintf(stderr, MSG_NOT_IP);
   }
   // exit(EXIT_FAILURE)
 }

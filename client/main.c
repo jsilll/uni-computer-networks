@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <signal.h>
+#include <libgen.h>
 
 #include "parsing.h"
 #include "centralized_messaging/commands.h"
@@ -26,8 +27,8 @@ int main(int argc, char *argv[])
 {
   signal(SIGINT, exitClient);
 
-  strcpy(PORT, DEFAULT_PORT);
   strcpy(ADDRESS, DEFAULT_IP);
+  strcpy(PORT, DEFAULT_PORT);
 
   loadInitArgs(argc, argv);
 
@@ -53,7 +54,8 @@ int main(int argc, char *argv[])
  */
 void exitClient(int signum)
 {
-  closeAllConnections();
+  printf("Exiting Centralized Messaging Client.\n");
+  freeServerAddresses();
   exit(signum);
 }
 
@@ -123,10 +125,25 @@ void readCommand(char *line)
     }
     else if (strlen(arg2))
     {
-      post(arg1, arg2);
+      if (strlen(arg1) > 240)
+      {
+        fprintf(stderr, ERR_INVALID_TXT_MSG);
+      }
+      else if (parseFName(basename(arg2)) == -1)
+      {
+        fprintf(stderr, ERR_INVALID_FNAME);
+      }
+      else
+      {
+        post(arg1, arg2);
+      }
     }
     else
     {
+      if (strlen(arg1) > 240)
+      {
+        fprintf(stderr, ERR_INVALID_TXT_MSG);
+      }
       post(arg1, NULL);
     }
   }
@@ -178,31 +195,34 @@ void readCommand(char *line)
       {
         if (parseGID(arg1) == -1)
         {
-          fprintf(stderr, "Invalid group id.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_GID);
         }
-
-        unsubscribe(arg1);
+        else
+        {
+          unsubscribe(atoi(arg1));
+        }
       }
       else if (!strcmp(op, CMD_SELECT) || !strcmp(op, CMD_SELECT_SHORT))
       {
         if (parseGID(arg1) == -1)
         {
-          fprintf(stderr, "Invalid group id.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_GID);
         }
-
-        selectGroup(arg1);
+        else
+        {
+          selectGroup(atoi(arg1));
+        }
       }
       else if (!strcmp(op, CMD_RETRIEVE) || !strcmp(op, CMD_RETRIEVE_SHORT))
       {
         if (parseMID(arg1) == -1)
         {
-          fprintf(stderr, "Invalid message id.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_MID);
         }
-
-        retrieve(arg1);
+        else
+        {
+          retrieve(atoi(arg1));
+        }
       }
       else
       {
@@ -215,66 +235,62 @@ void readCommand(char *line)
       {
         if (parseUID(arg1) == -1)
         {
-          fprintf(stderr, "Invalid user id.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_UID);
         }
-
-        if (parsePassword(arg2) == -1)
+        else if (parsePassword(arg2) == -1)
         {
-          fprintf(stderr, "Invalid password.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_PASSWD);
         }
-
-        registerUser(arg1, arg2);
+        else
+        {
+          registerUser(atoi(arg1), arg2);
+        }
       }
       else if (!strcmp(op, CMD_UNREGISTER) || !strcmp(op, CMD_UNREGISTER_SHORT))
       {
         if (parseUID(arg1) == -1)
         {
-          fprintf(stderr, "Invalid user id.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_UID);
         }
-
-        if (parsePassword(arg2) == -1)
+        else if (parsePassword(arg2) == -1)
         {
-          fprintf(stderr, "Invalid password.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_PASSWD);
         }
-
-        unregisterUser(arg1, arg2);
+        else
+        {
+          unregisterUser(atoi(arg1), arg2);
+        }
       }
       else if (!strcmp(op, CMD_LOGIN))
       {
         if (parseUID(arg1) == -1)
         {
-          fprintf(stderr, "Invalid user id.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_UID);
         }
-
-        if (parsePassword(arg2) == -1)
+        else if (parsePassword(arg2) == -1)
         {
-          fprintf(stderr, "Invalid password.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_PASSWD);
         }
-
-        login(arg1, arg2);
+        else
+        {
+          login(atoi(arg1), arg2);
+        }
       }
       else if (!strcmp(op, CMD_SUBSCRIBE) || !strcmp(op, CMD_SUBSCRIBE_SHORT))
       {
 
         if (parseGID(arg1) == -1 && strcmp(arg1, "0") && strcmp(arg1, "00"))
         {
-          fprintf(stderr, "Invalid user id.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_UID);
         }
-
-        if (parseGName(arg2) == -1)
+        else if (parseGName(arg2) == -1)
         {
-          fprintf(stderr, "Invalid password.\n");
-          return;
+          fprintf(stderr, ERR_INVALID_PASSWD);
         }
-
-        subscribe(arg1, arg2);
+        else
+        {
+          subscribe(atoi(arg1), arg2);
+        }
       }
       else
       {
