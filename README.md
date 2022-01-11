@@ -8,3 +8,5 @@
     - criar um interface.h
 
 - server/state/operations.c:235:22 warning do snprintf
+
+- mudar client -> User e server -> DS
