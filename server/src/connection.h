@@ -1,11 +1,9 @@
 #ifndef CONNECTION_H_
 #define CONNECTION_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
 #include <netdb.h>
+#include <stdio.h>
+#include <sys/socket.h>
 
 struct addrinfo *ADDR_TCP, *ADDR_UDP;
 

@@ -1,13 +1,13 @@
 #ifndef UDP_HANDLING_H_
 #define UDP_HANDLING_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/socket.h>
+#include <dirent.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <stdbool.h>
-#include <errno.h>
-#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
 #include "command_args_parsing.h"
 #include "operations.h"
 

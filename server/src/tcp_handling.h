@@ -1,13 +1,13 @@
 #ifndef TCP_HANDLING_H_
 #define TCP_HANDLING_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/socket.h>
+#include <dirent.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <stdbool.h>
-#include <errno.h>
-#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
 #include "command_args_parsing.h"
 #include "operations.h"
 
@@ -27,11 +27,11 @@ void handleTCPCommand(int connfd, bool verbose)
         op[3] = '\0';
     }
 
-    char command_buffer[36], buffer[1024];
+    char command_buffer[37], buffer[1024];
     bzero(buffer, sizeof(buffer));
     if (!strcmp(op, "ULS"))
     {
-        bzero(command_buffer, sizeof(command_buffer));
+        bzero(command_buffer, 4);
         read(connfd, command_buffer, 3);
 
         char gid[4];
@@ -64,7 +64,7 @@ void handleTCPCommand(int connfd, bool verbose)
                 write(connfd, buffer, strlen(buffer));
 
                 struct dirent *de;
-                bzero(buffer, strlen(buffer));
+                bzero(buffer, sizeof(buffer));
                 while ((de = readdir(dr)) != NULL)
                 {
                     ulsAppendUser(de, buffer);
@@ -84,12 +84,12 @@ void handleTCPCommand(int connfd, bool verbose)
     {
         char uid[7], gid[4], tsize[5], text[241];
 
-        bzero(command_buffer, sizeof(command_buffer));
+        bzero(command_buffer, 10);
         read(connfd, command_buffer, 9);
 
         sscanf(command_buffer, "%6s %3s", uid, gid);
 
-        bzero(command_buffer, sizeof(command_buffer));
+        bzero(command_buffer, 5);
         read(connfd, command_buffer, 4);
 
         sscanf(command_buffer, "%4s", tsize);
@@ -193,7 +193,7 @@ void handleTCPCommand(int connfd, bool verbose)
                             writeToFile(FPtr, buffer, n);
 
                             fbytes_read += n;
-                            bzero(buffer, sizeof(buffer));
+                            bzero(buffer, n);
                         }
                         fclose(FPtr);
 
@@ -211,7 +211,7 @@ void handleTCPCommand(int connfd, bool verbose)
     }
     else if (!strcmp(op, "RTV"))
     {
-        bzero(command_buffer, sizeof(command_buffer));
+        bzero(command_buffer, 15);
         read(connfd, command_buffer, 14);
 
         char uid[7], gid[4], mid[6];
@@ -256,7 +256,7 @@ void handleTCPCommand(int connfd, bool verbose)
                             close(connfd);
                             fprintf(stderr, "Couldn't send command_buffer. Error sending command_buffer.\n");
                         }
-                        bzero(buffer, sizeof(buffer));
+                        bzero(buffer, bytes_read);
                     }
                     fclose(FPtr);
                 }

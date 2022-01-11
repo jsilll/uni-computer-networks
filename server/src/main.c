@@ -1,13 +1,14 @@
 #include <arpa/inet.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/socket.h>
-#include <stdbool.h>
-#include <signal.h>
-#include "init_args_parsing.h"
+#include <unistd.h>
 #include "connection.h"
+#include "init_args_parsing.h"
+#include "operations.h"
 #include "tcp_handling.h"
 #include "udp_handling.h"
 
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
   loadInitArgs(argc, argv);
 
   printf("Centralized Messaging Server\n");
-  printf("PORT %s VERBOSE %s\n", PORT, VERBOSE ? "On" : "Off");
+  printf("PORT: %s VERBOSE: %s\n", PORT, VERBOSE ? "On" : "Off");
 
   setupAddresses(PORT);
   UDPFD = openSocket(SOCK_DGRAM);
@@ -57,8 +58,8 @@ int main(int argc, char *argv[])
  */
 void signalHandler(int signum)
 {
-  // TODO remove GROUPS and USERS folders
   printf("Exiting Centralized Messaging Server.\n");
+  deleteState();
   close(TCPFD);
   close(UDPFD);
   freeAddresses();
@@ -142,7 +143,6 @@ void executeCommand()
 
   if (FD_ISSET(UDPFD, &RSET))
   {
-
     handleCommandUDP(UDPFD, cliaddr, VERBOSE);
   }
 }

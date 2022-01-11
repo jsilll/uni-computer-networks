@@ -1,11 +1,8 @@
-- server/command_handling.h:
-    - separar em dois ficheiros handle_tcp_command.h e handle_udp_command.h
-
 - server:
-    - criar funcoes para fazer print das msg e dos erros, para evitar os "if (verbose) {}" em todo o lado
+    - criar funcoes para fazer print das msg e dos erros, para evitar os "if (verbose) {}"
 
-- client/centralized_messaging/:
-    - criar um interface.h
+- client/commands.c/:
+    - criar um interface.h?? (talvez remover os interface.h de todo)
 
 - server/state/operations.c:235:22 warning do snprintf
 

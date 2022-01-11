@@ -15,7 +15,16 @@
         "cstdlib": "c",
         "stdlib.h": "c",
         "commands.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "errno.h": "c",
+        "libgen.h": "c",
+        "in.h": "c",
+        "stdbool.h": "c",
+        "regex.h": "c",
+        "udp_handling.h": "c",
+        "command_args_parsing.h": "c",
+        "cerrno": "c",
+        "system_error": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

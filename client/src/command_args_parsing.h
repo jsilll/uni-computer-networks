@@ -65,7 +65,7 @@ int parsePassword(char *password)
  */
 int parseGName(char *gname)
 {
-  regex_t re; // TODO make this const
+  regex_t re;
   if (regcomp(&re, "^[a-zA-Z0-9_-]{1,24}$", REG_EXTENDED | REG_NOSUB) != 0 || regexec(&re, gname, 0, NULL, 0) != 0)
   {
     regfree(&re);
@@ -130,7 +130,7 @@ int parseFileSize(char *size)
  */
 int parseFName(char *fname)
 {
-  regex_t re; // TODO make this const
+  regex_t re;
   if (strlen(fname) > 24)
     return -1;
   if (regcomp(&re, "^[a-zA-Z0-9_.-]+[.]{1}[a-zA-Z0-9]{3}$", REG_EXTENDED | REG_NOSUB) != 0 || regexec(&re, fname, 0, NULL, 0) != 0)

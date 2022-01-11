@@ -1,17 +1,17 @@
+#include <dirent.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-
 #include "operations.h"
 
 void listGroups(char *buffer, char *uid);
 int createFile(char *FILENAME, char *data);
 int checkFileContent(char *FILENAME, char *data);
 int userLoggedIn(char *uid);
+int removeDirRecursive(const char *path);
 
 int N_GROUPS = 0;
 char PATH_BUFFER[256];
@@ -234,13 +234,14 @@ void ulsGetGName(char *gid, char *buffer)
  */
 void ulsAppendUser(struct dirent *de, char *buffer)
 {
-  char uid[8];
+  char uid[6], res[7];
 
   if (de->d_name[0] == '.' || !strcmp(de->d_name, "MSG") || !strcmp(de->d_name, "name.txt"))
     return;
 
-  snprintf(uid, 7, " %s", de->d_name);
-  strcat(buffer, uid);
+  sscanf(de->d_name, "%5s.txt", uid);
+  sprintf(res, " %s", uid);
+  strcat(buffer, res);
 }
 
 /**
@@ -357,7 +358,7 @@ int retrieve(char *uid, char *gid, char *mid)
  */
 FILE *retrieveAux(char *gid, int mid, char *buffer)
 {
-  char text[240];
+  char text[241];
   sprintf(PATH_BUFFER, "GROUPS/%s/MSG/%04d/T E X T.txt", gid, mid);
   FILE *FPtr = fopen(PATH_BUFFER, "r");
   bzero(text, sizeof(text));
@@ -420,7 +421,18 @@ void writeToFile(FILE *FPtr, char *data, int size_write)
   fwrite(data, sizeof(char), size_write, FPtr);
 }
 
-/* Helper Functions */
+/**
+ * @brief Deletes all the files the server 
+ * had previously stored
+ * 
+ */
+void deleteState()
+{
+  removeDirRecursive("GROUPS");
+  removeDirRecursive("USERS");
+}
+
+/* Private Helper Functions */
 
 /**
  * @brief Auxiliar function that lists all the groups if uid = NULL, else only lists
@@ -564,4 +576,58 @@ int createFile(char *filename, char *data)
   if (fclose(fPtr) == EOF)
     return -1;
   return 0;
+}
+
+/**
+ * @brief Removes a directory recursively
+ * 
+ * @param path 
+ * @return int 
+ */
+int removeDirRecursive(const char *path)
+{
+  DIR *d = opendir(path);
+  size_t path_len = strlen(path);
+  int r = -1;
+
+  if (d)
+  {
+    struct dirent *p;
+
+    r = 0;
+    while (!r && (p = readdir(d)))
+    {
+      int r2 = -1;
+      char *buf;
+      size_t len;
+
+      if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+        continue;
+
+      len = path_len + strlen(p->d_name) + 2;
+      buf = malloc(len);
+
+      if (buf)
+      {
+        struct stat statbuf;
+
+        snprintf(buf, len, "%s/%s", path, p->d_name);
+        if (!stat(buf, &statbuf))
+        {
+          if (S_ISDIR(statbuf.st_mode))
+            r2 = removeDirRecursive(buf);
+          else
+            r2 = unlink(buf);
+        }
+        free(buf);
+      }
+      r = r2;
+    }
+    closedir(d);
+  }
+
+  if (!r)
+    r = rmdir(path);
+
+  return r;
 }

@@ -1,17 +1,13 @@
 #include <arpa/inet.h>
-#include <errno.h>
+#include <libgen.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <signal.h>
-#include <libgen.h>
-
-#include "init_args_parsing.h"
-#include "commands.h"
 #include "command_args_parsing.h"
+#include "commands.h"
+#include "init_args_parsing.h"
 
 #define DEFAULT_PORT "58006"
 #define DEFAULT_IP "localhost"
@@ -144,7 +140,10 @@ void readCommand(char *line)
       {
         fprintf(stderr, ERR_INVALID_TXT_MSG);
       }
-      post(arg1, NULL);
+      else
+      {
+        post(arg1, NULL);
+      }
     }
   }
   else if (numTokens == 4)

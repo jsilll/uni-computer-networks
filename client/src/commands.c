@@ -1,22 +1,20 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <string.h>
-#include <stdbool.h>
-#include <netinet/in.h>
-#include <libgen.h>
 #include <errno.h>
-#include "commands.h" // TODO remove unused imports, all files
+#include <libgen.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include "commands.h"
 // TODO interface.h?
 
 bool LOGGED_IN = false, GROUP_SELECTED = false;
 int UID = 0, GID = 0;
-char PASSWORD[9] = {'\0'};                       // TODO 8 16 4
-char COMMAND_BUFFER[512], RESPONSE_BUFFER[3274]; // TODO 4096
+char PASSWORD[9] = {'\0'}, COMMAND_BUFFER[512], RESPONSE_BUFFER[3274];
 struct addrinfo *ADDR_UDP, *ADDR_TCP;
-// TODO unecessarily large bzeros
 
 /**
  * @brief Sets up the udp and tcp server addresses
@@ -484,11 +482,11 @@ void ulist()
         read(sockfd, RESPONSE_BUFFER, 1);
     }
 
-    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-    while ((n = read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER))) > 0)
+    bzero(RESPONSE_BUFFER, 32);
+    while ((n = read(sockfd, RESPONSE_BUFFER, 31)) > 0)
     {
         printf("%s", RESPONSE_BUFFER);
-        bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+        bzero(RESPONSE_BUFFER, n);
     }
 
     if (n == -1)
@@ -535,8 +533,8 @@ void post(char *message, char *fname)
             return;
         }
 
-        bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-        if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+        bzero(RESPONSE_BUFFER, 10);
+        if (read(sockfd, RESPONSE_BUFFER, 9) == -1)
         {
             close(sockfd);
             fprintf(stderr, "Error receiving server's response.\n");
@@ -606,7 +604,7 @@ void post(char *message, char *fname)
             return;
         }
 
-        bzero(file_buffer, sizeof(file_buffer));
+        bzero(file_buffer, bytes_read);
     }
 
     fclose(fptr);
@@ -618,8 +616,8 @@ void post(char *message, char *fname)
         return;
     }
 
-    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
-    if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
+    bzero(RESPONSE_BUFFER, 10);
+    if (read(sockfd, RESPONSE_BUFFER, 9) == -1)
     {
         close(sockfd);
         fprintf(stderr, "Error receiving server's response.\n");
@@ -673,7 +671,7 @@ void retrieve(int mid)
         return;
     }
 
-    bzero(RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER));
+    bzero(RESPONSE_BUFFER, 8);
     if (read(sockfd, RESPONSE_BUFFER, 7) == -1)
     {
         close(sockfd);
@@ -697,7 +695,7 @@ void retrieve(int mid)
     while ((bytes_read = read(sockfd, file_buffer, sizeof(file_buffer))) > 0)
     {
         fwrite(file_buffer, sizeof(char), bytes_read, tmpfptr);
-        bzero(file_buffer, sizeof(file_buffer));
+        bzero(file_buffer, bytes_read);
     }
 
     if (bytes_read == -1)
@@ -723,7 +721,7 @@ void retrieve(int mid)
         FILE *msgfptr = fopen(path_buffer, "w");
 
         fgetc(tmpfptr);
-        bzero(file_buffer, sizeof(file_buffer));
+        bzero(file_buffer, atoi(tsize) + 1);
         fread(file_buffer, sizeof(char), atoi(tsize), tmpfptr);
 
         printf("%s", file_buffer);

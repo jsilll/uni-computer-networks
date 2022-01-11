@@ -1,6 +1,8 @@
 #ifndef OPERATIONS_H
 #define OPERATIONS_H
 
+#include <dirent.h>
+
 /* Operation Related Functions */
 
 int registerUser(char *uid, char *pass);
@@ -22,5 +24,6 @@ FILE *retrieveAux(char *gid, int mid, char *buffer);
 
 int readFile(FILE *FPtr, char *data, int size_read);
 void writeToFile(FILE *FPtr, char *data, int size_read);
+void deleteState();
 
 #endif // OPERATIONS_H
