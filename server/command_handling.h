@@ -217,14 +217,14 @@ void handleTCPCommand(int connfd, bool verbose)
         strcpy(buffer, "RUL OK");
         write(connfd, buffer, strlen(buffer));
 
-        getGName(gid, buffer);
+        ulsGetGName(gid, buffer);
         write(connfd, buffer, strlen(buffer));
 
         struct dirent *de;
         bzero(buffer, strlen(buffer));
         while ((de = readdir(dr)) != NULL)
         {
-          ulsAux(de, buffer);
+          ulsAppendUser(de, buffer);
 
           if (strlen(buffer) > 512)
           {
@@ -341,13 +341,13 @@ void handleTCPCommand(int connfd, bool verbose)
 
             if (fbytes_read > 0)
             {
-              WriteToFile(FPtr, &command_buffer[strlen(fname) + strlen(fsize) + 2], fbytes_read);
+              writeToFile(FPtr, &command_buffer[strlen(fname) + strlen(fsize) + 2], fbytes_read);
             }
 
             bzero(buffer, sizeof(buffer));
             while ((fbytes_read < fbytes) && (n = read(connfd, buffer, (((sizeof(buffer)) < (fbytes - fbytes_read)) ? (sizeof(buffer)) : (fbytes - fbytes_read)))) > 0)
             {
-              WriteToFile(FPtr, buffer, n);
+              writeToFile(FPtr, buffer, n);
 
               fbytes_read += n;
               bzero(buffer, sizeof(buffer));
@@ -406,7 +406,7 @@ void handleTCPCommand(int connfd, bool verbose)
         {
           int bytes_read;
           bzero(buffer, sizeof(buffer));
-          while ((bytes_read = ReadFile(FPtr, buffer, 1024)) > 0)
+          while ((bytes_read = readFile(FPtr, buffer, 1024)) > 0)
           {
             if (write(connfd, buffer, bytes_read) == -1)
             {

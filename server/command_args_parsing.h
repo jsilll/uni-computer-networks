@@ -14,8 +14,8 @@
  */
 int parseGID(char *gid)
 {
-  long gid_parsed = strtol(gid, NULL, 10);
-  if (strlen(gid) == 2 && gid_parsed != 0)
+  int gid_parsed = atoi(gid);
+  if (strlen(gid) == 2 && gid_parsed > 0 && gid_parsed <= 99)
     return 0;
   return -1;
 }
@@ -31,7 +31,7 @@ int parseUID(char *uid)
 {
   if (strlen(uid) != 5)
     return -1;
-  int uid_parsed = strtol(uid, NULL, 10);
+  int uid_parsed = atoi(uid);
   if (!uid_parsed && strcmp(uid, "00000") != 0)
     return -1;
   return uid_parsed;

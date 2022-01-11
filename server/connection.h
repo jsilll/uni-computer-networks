@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-struct addrinfo *ADDR_TCP, *ADDR_UDP; // TODO put in connection.c
+struct addrinfo *ADDR_TCP, *ADDR_UDP;
 
 /**
  * @brief Sets up the server addresses for 

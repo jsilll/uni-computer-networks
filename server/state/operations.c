@@ -17,7 +17,8 @@ int N_GROUPS = 0;
 char PATH_BUFFER[256];
 
 /**
- * Registers a user on the DS server
+ * @brief Registers a user on the DS server
+ * 
  * @param uid
  * @param pass
  * @return
@@ -192,7 +193,7 @@ int myGroups(char *uid, char *buffer)
 }
 
 /**
- * @brief
+ * @brief List all the users subscribed to a group
  *
  * @param gid
  * @return
@@ -209,12 +210,13 @@ DIR *ulist(char *gid)
 }
 
 /**
- * @brief
+ * @brief Gets the group name for a certain GID,
+ *  appends it with a space: " "
  *
  * @param gid
  * @param buffer
  */
-void getGName(char *gid, char *buffer)
+void ulsGetGName(char *gid, char *buffer)
 {
   char gname[25];
   sprintf(PATH_BUFFER, "GROUPS/%s/%s", gid, "name.txt");
@@ -225,12 +227,12 @@ void getGName(char *gid, char *buffer)
 }
 
 /**
- * @brief
+ * @brief Auxilary function for ulist command
  *
  * @param de
  * @param buffer
  */
-void ulsAux(struct dirent *de, char *buffer)
+void ulsAppendUser(struct dirent *de, char *buffer)
 {
   char uid[8];
 
@@ -345,6 +347,14 @@ int retrieve(char *uid, char *gid, char *mid)
   return to_read;
 }
 
+/**
+ * @brief Auxiliar function for the retrieve command
+ * 
+ * @param gid 
+ * @param mid 
+ * @param buffer 
+ * @return FILE* 
+ */
 FILE *retrieveAux(char *gid, int mid, char *buffer)
 {
   char text[240];
@@ -393,7 +403,7 @@ FILE *retrieveAux(char *gid, int mid, char *buffer)
  * @param max_size_read
  * @return int
  */
-int ReadFile(FILE *FPtr, char *data, int max_size_read)
+int readFile(FILE *FPtr, char *data, int max_size_read)
 {
   return fread(data, sizeof(char), max_size_read, FPtr);
 }
@@ -405,10 +415,12 @@ int ReadFile(FILE *FPtr, char *data, int max_size_read)
  * @param data
  * @param size_write
  */
-void WriteToFile(FILE *FPtr, char *data, int size_write)
+void writeToFile(FILE *FPtr, char *data, int size_write)
 {
   fwrite(data, sizeof(char), size_write, FPtr);
 }
+
+/* Helper Functions */
 
 /**
  * @brief Auxiliar function that lists all the groups if uid = NULL, else only lists
@@ -493,21 +505,20 @@ void listGroups(char *buffer, char *uid)
 }
 
 /**
- * @brief Creates a file with and writes data argument
+ * @brief Verifies if user is logged in
  *
- * @param filename
- * @param data
- * @return
+ * @param uid
+ * @return int
  */
-int createFile(char *filename, char *data)
+int userLoggedIn(char *uid)
 {
-  FILE *fPtr = fopen(filename, "w");
-  if (fPtr == NULL)
+  sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
+  FILE *fptr;
+  if ((fptr = fopen(PATH_BUFFER, "r")) == NULL)
+  {
     return -1;
-  if (fputs(data, fPtr) == EOF)
-    return -1;
-  if (fclose(fPtr) == EOF)
-    return -1;
+  }
+  fclose(fptr);
   return 0;
 }
 
@@ -537,19 +548,20 @@ int checkFileContent(char *filename, char *data)
 }
 
 /**
- * @brief Verifies if user is logged in
+ * @brief Creates a file with and writes data argument
  *
- * @param uid
- * @return int
+ * @param filename
+ * @param data
+ * @return
  */
-int userLoggedIn(char *uid)
+int createFile(char *filename, char *data)
 {
-  sprintf(PATH_BUFFER, "USERS/%s/login.txt", uid);
-  FILE *fptr;
-  if ((fptr = fopen(PATH_BUFFER, "r")) == NULL)
-  {
+  FILE *fPtr = fopen(filename, "w");
+  if (fPtr == NULL)
     return -1;
-  }
-  fclose(fptr);
+  if (fputs(data, fPtr) == EOF)
+    return -1;
+  if (fclose(fPtr) == EOF)
+    return -1;
   return 0;
 }
