@@ -16,5 +16,6 @@
         "stdlib.h": "c",
         "commands.h": "c",
         "unistd.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }

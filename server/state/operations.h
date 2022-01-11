@@ -2,6 +2,7 @@
 #define RC_PROJECT_SERVER_STATE_H_
 
 /* Operation Related Functions */
+
 int registerUser(char *uid, char *pass);
 int unregisterUser(char *uid, char *pass);
 int login(char *uid, char *pass);
@@ -18,6 +19,7 @@ int retrieve(char *uid, char *gid, char *mid);
 FILE *retrieveAux(char *gid, int mid, char *buffer);
 
 /* Auxiliar Functions */
+
 int readFile(FILE *FPtr, char *data, int size_read);
 void writeToFile(FILE *FPtr, char *data, int size_read);
 

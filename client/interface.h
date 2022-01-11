@@ -2,6 +2,7 @@
 #define CLIENT_CLIENT_INTERFACE_H
 
 /* Commands */
+
 const char CMD_REGISTER[] = "reg";
 const char CMD_UNREGISTER[] = "unregister";
 const char CMD_UNREGISTER_SHORT[] = "unr";
@@ -29,9 +30,11 @@ const char CMD_RETRIEVE[] = "retrieve";
 const char CMD_RETRIEVE_SHORT[] = "r";
 
 /* Info Messages */
+
 const char MSG_NOT_IP[] = "Address isn't a valid IP, checking if it's a valid address.\n";
 
 /* Error Messages */
+
 const char ERR_INVALID_PORT[] = "Invalid value for port argument.\n";
 const char ERR_UNKNOWN_CMD[] = "Unknown command.\n";
 const char ERR_INVALID_POST_CMD[] = "Invalid post command.\n";
