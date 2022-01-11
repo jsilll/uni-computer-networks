@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
   }
 
   char line[MAX_INPUT_SIZE];
-  while (fgets(line, sizeof(line) / sizeof(char), stdin))
+  while (fgets(line, sizeof(line), stdin))
   {
     readCommand(line);
   }
