@@ -1,5 +1,5 @@
-#ifndef CENTRALIZED_MESSAGING_PARSING_H
-#define CENTRALIZED_MESSAGING_PARSING_H
+#ifndef COMMAND_ARGS_PARSING_H_
+#define COMMAND_ARGS_PARSING_H_
 
 #include <regex.h>
 #include <stdlib.h>
@@ -143,4 +143,4 @@ int parseFName(char *fname)
   return 0;
 }
 
-#endif // CENTRALIZED_MESSAGING_PARSING_H
+#endif // COMMAND_ARGS_PARSING_H_

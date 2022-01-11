@@ -1,5 +1,5 @@
-#ifndef CLIENT_CLIENT_INTERFACE_H
-#define CLIENT_CLIENT_INTERFACE_H
+#ifndef INTERFACE_H_
+#define INTERFACE_H_
 
 /* Commands */
 
@@ -45,4 +45,4 @@ const char ERR_INVALID_MID[] = "Invalid message id.\n";
 const char ERR_INVALID_UID[] = "Invalid user id.\n";
 const char ERR_INVALID_PASSWD[] = "Invalid password.\n";
 
-#endif //CLIENT_CLIENT_INTERFACE_H
+#endif //INTERFACE_H_

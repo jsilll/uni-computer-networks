@@ -1,5 +1,5 @@
-#ifndef CENTRALIZED_MESSAGING_API_H
-#define CENTRALIZED_MESSAGING_API_H
+#ifndef COMMANDS_H_
+#define COMMANDS_H_
 
 /* Server Addresses (UDP and TCP) */
 
@@ -26,4 +26,4 @@ void ulist();
 void post(char *message, char *fname);
 void retrieve(int mid);
 
-#endif //CENTRALIZED_MESSAGING_API_H
+#endif //COMMANDS_H_

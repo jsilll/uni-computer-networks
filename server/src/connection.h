@@ -1,5 +1,5 @@
-#ifndef RC_PROJECT_SERVER_CONNECTION_H_
-#define RC_PROJECT_SERVER_CONNECTION_H_
+#ifndef CONNECTION_H_
+#define CONNECTION_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,4 +94,4 @@ int openSocket(int socktype)
   return fd;
 }
 
-#endif //RC_PROJECT_SERVER_CONNECTION_H_
+#endif //CONNECTION_H_

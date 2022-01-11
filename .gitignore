@@ -1,5 +1,11 @@
 build/
 
+server/bin/*
+server/obj/*
+
+client/bin/*
+client/obj/*
+
 # Created by https://www.toptal.com/developers/gitignore/api/clion
 # Edit at https://www.toptal.com/developers/gitignore?templates=clion
 

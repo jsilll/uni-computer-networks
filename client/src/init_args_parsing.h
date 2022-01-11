@@ -1,5 +1,5 @@
-#ifndef _PARSING_H_
-#define _PARSING_H_
+#ifndef INIT_ARGS_PARSING_H_
+#define INIT_ARGS_PARSING_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,4 +45,4 @@ void parsePortArg(char *port)
   }
 }
 
-#endif //_PARSING_H_
+#endif //INIT_ARGS_PARSING_H_

@@ -6,9 +6,10 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <signal.h>
-#include "parsing.h"
+#include "init_args_parsing.h"
 #include "connection.h"
-#include "command_handling.h"
+#include "tcp_handling.h"
+#include "udp_handling.h"
 
 #define DEFAULT_PORT "58006"
 

@@ -1,5 +1,5 @@
-#ifndef RC_PROJECT_SERVER_STATE_H_
-#define RC_PROJECT_SERVER_STATE_H_
+#ifndef OPERATIONS_H
+#define OPERATIONS_H
 
 /* Operation Related Functions */
 
@@ -23,4 +23,4 @@ FILE *retrieveAux(char *gid, int mid, char *buffer);
 int readFile(FILE *FPtr, char *data, int size_read);
 void writeToFile(FILE *FPtr, char *data, int size_read);
 
-#endif // RC_PROJECT_SERVER_STATE_H_
+#endif // OPERATIONS_H
