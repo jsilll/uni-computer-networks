@@ -473,7 +473,7 @@ void ulist()
     if (!strcmp(status, "NOK"))
     {
         close(sockfd);
-        fprintf(stderr, "Invalid GID.\n");
+        fprintf(stderr, "Group %02d doesn't exist.\n", GID);
         return;
     }
 
