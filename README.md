@@ -6,3 +6,5 @@
 - prints gid 1 -> gid 01
 
 - groups e my_groups meter legenda
+
+- core dumped no IP

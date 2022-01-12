@@ -16,7 +16,7 @@
  */
 void parseIPArg(char *ip)
 {
-  if (!inet_pton(AF_INET, ip, NULL))
+  if (!inet_pton(AF_INET6, ip, NULL))
   {
     fprintf(stderr, MSG_NOT_IP);
   }

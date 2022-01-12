@@ -30,7 +30,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/client",
-            "args": [],
+            "args": [
+                "-n 194.210.158.203"
+            ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
