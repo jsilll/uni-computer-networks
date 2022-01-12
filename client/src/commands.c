@@ -376,7 +376,7 @@ void unsubscribe(int gid)
     }
     else
     {
-        printf("Unsubscribed from group %02d successfully.\n", GID);
+        printf("Unsubscribed from group %02d successfully.\n", gid);
     }
 }
 
