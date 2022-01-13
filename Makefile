@@ -28,7 +28,7 @@ SUBMISSION=submission.zip
 all: $(CLIENT_BIN) $(SERVER_BIN)
 
 submission: clean
-	zip -r $(SUBMISSION) $(CLIENT_DIR) $(SERVER_DIR) Makefile 
+	zip -r $(SUBMISSION) $(CLIENT_DIR) $(SERVER_DIR) README.md Makefile 
 
 $(CLIENT_BIN): $(CLIENT_OBJS)
 	$(CC) $(CFLAGS) $(CLIENT_OBJS) -o $@
