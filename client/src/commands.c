@@ -288,7 +288,7 @@ void groups()
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
         last_read_size = 2 + strlen(gname) + 4 + 3;
-        printf("Group ID: %02d Group name: %s Message ID: %04d\n", atoi(gid), gname, atoi(mid));
+        printf("Group ID: %02d Group name: %s Last Message ID: %04d\n", atoi(gid), gname, atoi(mid));
     }
 }
 
@@ -405,7 +405,7 @@ void myGroups()
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
         last_read_size = 2 + strlen(gname) + 4 + 3;
-        printf("Group ID: %02d Group name: %s Message ID: %04d\n", atoi(gid), gname, atoi(mid));
+        printf("Group ID: %02d Group name: %s Last Message ID: %04d\n", atoi(gid), gname, atoi(mid));
     }
 }
 
@@ -731,7 +731,7 @@ void retrieve(int mid)
         bzero(file_buffer, atoi(tsize) + 1);
         fread(file_buffer, sizeof(char), atoi(tsize), tmpfptr);
 
-        printf("%s", file_buffer);
+        printf("Message: %s", file_buffer);
 
         fwrite(file_buffer, sizeof(char), atoi(tsize), msgfptr);
         fclose(msgfptr);
