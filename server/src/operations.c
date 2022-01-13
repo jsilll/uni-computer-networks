@@ -18,7 +18,7 @@ char PATH_BUFFER[256];
 
 /**
  * @brief Registers a user on the DS server
- * 
+ *
  * @param uid
  * @param pass
  * @return
@@ -350,11 +350,11 @@ int retrieve(char *uid, char *gid, char *mid)
 
 /**
  * @brief Auxiliar function for the retrieve command
- * 
- * @param gid 
- * @param mid 
- * @param buffer 
- * @return FILE* 
+ *
+ * @param gid
+ * @param mid
+ * @param buffer
+ * @return FILE*
  */
 FILE *retrieveAux(char *gid, int mid, char *buffer)
 {
@@ -422,9 +422,9 @@ void writeToFile(FILE *FPtr, char *data, int size_write)
 }
 
 /**
- * @brief Deletes all the files the server 
+ * @brief Deletes all the files the server
  * had previously stored
- * 
+ *
  */
 void deleteState()
 {
@@ -580,54 +580,61 @@ int createFile(char *filename, char *data)
 
 /**
  * @brief Removes a directory recursively
- * 
- * @param path 
- * @return int 
+ *
+ * @param path
+ * @return int
  */
 int removeDirRecursive(const char *path)
 {
-  DIR *d = opendir(path);
+  DIR *dir = opendir(path);
   size_t path_len = strlen(path);
-  int r = -1;
+  int res1 = -1;
 
-  if (d)
+  if (dir)
   {
-    struct dirent *p;
+    struct dirent *de;
 
-    r = 0;
-    while (!r && (p = readdir(d)))
+    res1 = 0;
+    while (!res1 && (de = readdir(dir)))
     {
-      int r2 = -1;
-      char *buf;
+      int res2 = -1;
+      char *path_buffer;
       size_t len;
 
-      if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+      if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
         continue;
 
-      len = path_len + strlen(p->d_name) + 2;
-      buf = malloc(len);
+      len = path_len + strlen(de->d_name) + 2;
+      path_buffer = malloc(len);
 
-      if (buf)
+      if (path_buffer)
       {
         struct stat statbuf;
+        snprintf(path_buffer, len, "%s/%s", path, de->d_name);
 
-        snprintf(buf, len, "%s/%s", path, p->d_name);
-        if (!stat(buf, &statbuf))
+        if (!stat(path_buffer, &statbuf))
         {
           if (S_ISDIR(statbuf.st_mode))
-            r2 = removeDirRecursive(buf);
+          {
+            res2 = removeDirRecursive(path_buffer);
+          }
           else
-            r2 = unlink(buf);
+          {
+            res2 = unlink(path_buffer);
+          }
         }
-        free(buf);
+
+        free(path_buffer);
       }
-      r = r2;
+      res1 = res2;
     }
-    closedir(d);
+    closedir(dir);
   }
 
-  if (!r)
-    r = rmdir(path);
+  if (!res1)
+  {
+    res1 = rmdir(path);
+  }
 
-  return r;
+  return res1;
 }

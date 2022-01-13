@@ -40,9 +40,9 @@ const char ERR_UNKNOWN_CMD[] = "Unknown command.\n";
 const char ERR_INVALID_POST_CMD[] = "Invalid post command.\n";
 const char ERR_INVALID_TXT_MSG[] = "Message exceeds 240 characters.\n";
 const char ERR_INVALID_FNAME[] = "Invalid filename argument.\n";
-const char ERR_INVALID_GID[] = "Invalid group id.\n";
-const char ERR_INVALID_MID[] = "Invalid message id.\n";
-const char ERR_INVALID_UID[] = "Invalid user id.\n";
+const char ERR_INVALID_GID[] = "Invalid group ID.\n";
+const char ERR_INVALID_MID[] = "Invalid message ID.\n";
+const char ERR_INVALID_UID[] = "Invalid user ID.\n";
 const char ERR_INVALID_PASSWD[] = "Invalid password.\n";
 
-#endif //INTERFACE_H_
+#endif // INTERFACE_H_
