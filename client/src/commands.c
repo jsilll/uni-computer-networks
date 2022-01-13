@@ -9,7 +9,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "commands.h"
-// TODO interface.h?
 
 bool LOGGED_IN = false, GROUP_SELECTED = false;
 int UID = 0, GID = 0;
@@ -148,7 +147,7 @@ void registerUser(int uid, char *password)
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid UID and/or password.\n");
+        fprintf(stderr, "Invalid user ID and/or password.\n");
     }
     else if (!strcmp(status, "DUP"))
     {
@@ -175,7 +174,7 @@ void unregisterUser(int uid, char *password)
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid UID and/or password, or user doesn't exist.\n");
+        fprintf(stderr, "Invalid user ID and/or password, or user doesn't exist.\n");
     }
     else
     {
@@ -212,7 +211,7 @@ void login(int uid, char *password)
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid UID and/or password, or user doesn't exist.\n");
+        fprintf(stderr, "Invalid user ID and/or password, or user doesn't exist.\n");
     }
     else
     {
@@ -243,7 +242,7 @@ void logout()
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid UID and/or password, or user doesn't exist.\n");
+        fprintf(stderr, "Invalid user ID and/or password, or user doesn't exist.\n");
     }
     else
     {
@@ -266,7 +265,7 @@ void showUID()
         return;
     }
 
-    printf("[LOCAL] Currently selected UID: %d\n", UID);
+    printf("[LOCAL] Currently selected user ID: %05d\n", UID);
 }
 
 /**
@@ -289,7 +288,7 @@ void groups()
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
         last_read_size = 2 + strlen(gname) + 4 + 3;
-        printf("%s %s %s\n", gid, gname, mid); // TODO atoi()??
+        printf("Group ID: %02d Group name: %s Message ID: %04d\n", atoi(gid), gname, atoi(mid));
     }
 }
 
@@ -314,15 +313,15 @@ void subscribe(int gid, char *gname)
     sscanf(RESPONSE_BUFFER, "%3s %8s", op, status);
     if (!strcmp(status, "E_USR"))
     {
-        fprintf(stderr, "Invalid UID.\n");
+        fprintf(stderr, "Invalid user ID.\n");
     }
     else if (!strcmp(status, "E_GRP"))
     {
-        fprintf(stderr, "Invalid GID.\n");
+        fprintf(stderr, "Invalid group ID.\n");
     }
     else if (!strcmp(status, "E_GNAME"))
     {
-        fprintf(stderr, "Invalid GName.\n");
+        fprintf(stderr, "Invalid group name.\n");
     }
     else if (!strcmp(status, "NOK"))
     {
@@ -336,7 +335,7 @@ void subscribe(int gid, char *gname)
     {
         int n;
         sscanf(&RESPONSE_BUFFER[7], "%d", &n);
-        printf("New group created: %d.\n", n);
+        printf("New group created: %02d.\n", n);
     }
     else
     {
@@ -364,11 +363,11 @@ void unsubscribe(int gid)
     sscanf(RESPONSE_BUFFER, "%3s %8s", op, status);
     if (!strcmp(status, "E_USR"))
     {
-        fprintf(stderr, "Invalid UID.\n");
+        fprintf(stderr, "Invalid user ID.\n");
     }
     else if (!strcmp(status, "E_GRP"))
     {
-        fprintf(stderr, "Invalid GID.\n");
+        fprintf(stderr, "Invalid group ID.\n");
     }
     else if (!strcmp(status, "NOK"))
     {
@@ -406,7 +405,7 @@ void myGroups()
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
         last_read_size = 2 + strlen(gname) + 4 + 3;
-        printf("%s %s %s\n", gid, gname, mid); // TODO atoi()??
+        printf("Group ID: %02d Group name: %s Message ID: %04d\n", atoi(gid), gname, atoi(mid));
     }
 }
 
@@ -419,7 +418,7 @@ void selectGroup(int gid)
 {
     GROUP_SELECTED = true;
     GID = gid;
-    printf("[LOCAL] %02d is now selected.\n", GID);
+    printf("[LOCAL] group ID %02d is now selected.\n", GID);
 }
 
 /**
@@ -430,11 +429,11 @@ void showGID()
 {
     if (!GROUP_SELECTED)
     {
-        fprintf(stderr, "[LOCAL] GID not selected.\n");
+        fprintf(stderr, "[LOCAL] group ID not selected.\n");
     }
     else
     {
-        printf("[LOCAL] GID: %02d\n", GID);
+        printf("[LOCAL] Currently selected group ID: %02d\n", GID);
     }
 }
 
@@ -551,7 +550,7 @@ void post(char *message, char *fname)
         }
         else
         {
-            printf("Posted in group %d successfully, message id is %d.\n", GID, atoi(status));
+            printf("Posted in group %02d successfully, message ID is %04d.\n", GID, atoi(status));
         }
         return;
     }
@@ -567,7 +566,6 @@ void post(char *message, char *fname)
     rewind(fptr);
 
     sprintf(COMMAND_BUFFER, "PST %05d %02d %lu %s %s %lu ", UID, GID, strlen(message), message, basename(fname), fsize);
-    printf("%s\n", COMMAND_BUFFER);
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(sockfd);
@@ -634,7 +632,7 @@ void post(char *message, char *fname)
     }
     else
     {
-        printf("Posted in group %d successfully, message id is %d.\n", GID, atoi(status));
+        printf("Posted in group %02d successfully, message ID is %04d.\n", GID, atoi(status));
     }
 }
 
@@ -684,7 +682,16 @@ void retrieve(int mid)
     if (strcmp(status, "OK"))
     {
         close(sockfd);
-        printf("%s %s\n", op, status);
+
+        if (!strcmp(status, "EOF"))
+        {
+            fprintf(stderr, "Unexpected error occurred.\n");
+        }
+        else if (!strcmp(status, "NOK"))
+        {
+            fprintf(stderr, "There's no available messages to display starting from message ID %04d\n", mid);
+        }
+
         return;
     }
 
@@ -747,7 +754,7 @@ void retrieve(int mid)
             char fname[25], fsize[11];
             fscanf(tmpfptr, "%24s %10s", fname, fsize);
 
-            printf(" %s %s Bytes", fname, fsize);
+            printf(" Filename: %s Bytes: %s", fname, fsize);
 
             fgetc(tmpfptr);
             int iter = atoi(fsize);

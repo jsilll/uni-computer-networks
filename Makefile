@@ -21,31 +21,31 @@ SERVER_BIN_DIR=$(SERVER_DIR)/$(BIN_DIR)
 SERVER_SRCS=$(wildcard $(SERVER_SRC_DIR)/*.c)
 SERVER_OBJS=$(patsubst $(SERVER_SRC_DIR)/%.c, $(SERVER_OBJ_DIR)/%.o, $(SERVER_SRCS))
 
-.PHONY: all clean 
+SUBMISSION=submission.zip
+
+.PHONY: all submission clean 
 
 all: $(CLIENT_BIN) $(SERVER_BIN)
 
-# Client
+submission: clean
+	zip -r $(SUBMISSION) $(CLIENT_DIR) $(SERVER_DIR) Makefile 
+
 $(CLIENT_BIN): $(CLIENT_OBJS)
 	$(CC) $(CFLAGS) $(CLIENT_OBJS) -o $@
 
 $(CLIENT_OBJ_DIR)/%.o: $(CLIENT_SRC_DIR)/%.c
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Server
 $(SERVER_BIN): $(SERVER_OBJS)
 	$(CC) $(CFLAGS) $(SERVER_OBJS) -o $@
 
 $(SERVER_OBJ_DIR)/%.o: $(SERVER_SRC_DIR)/%.c
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
-
-$(CLIENT_OBJ_DIR):
-	@mkdir $@
-
-$(SERVER_OBJ_DIR):
-	@mkdir $@
 
 clean: 
 	@echo Cleaning...
 	@$(RM) -r $(CLIENT_BIN) ./$(CLIENT_OBJ_DIR)/*
 	@$(RM) -r $(SERVER_BIN) ./$(SERVER_OBJ_DIR)/*
+	@$(RM) $(SUBMISSION)

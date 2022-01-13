@@ -127,85 +127,84 @@ void handleTCPCommand(int connfd, bool verbose)
                     sprintf(buffer, "RPT %s\n", mid);
                     write(connfd, buffer, strlen(buffer));
                 }
-
-                close(connfd);
-                return;
             }
-
-            read(connfd, &text[strlen(text)], atoi(tsize) - strlen(text));
-            read(connfd, &c, 1);
-            if (c == '\n')
+            else
             {
-                if (verbose)
+                read(connfd, &text[strlen(text)], atoi(tsize) - strlen(text));
+                read(connfd, &c, 1);
+                if (c == '\n')
                 {
-                    printf("CMD: %s %s %s %s\n", op, uid, gid, tsize);
-                }
+                    if (verbose)
+                    {
+                        printf("CMD: %s %s %s %s\n", op, uid, gid, tsize);
+                    }
 
-                if (post(uid, gid, text, NULL, mid) == NULL)
-                {
-                    strcpy(buffer, "RPT NOK\n");
-                    write(connfd, buffer, strlen(buffer));
-                }
-                else
-                {
-                    sprintf(buffer, "RPT %s\n", mid);
-                    write(connfd, buffer, strlen(buffer));
-                }
-            }
-            else if (c == ' ')
-            {
-                bzero(command_buffer, sizeof(command_buffer));
-                int n = read(connfd, command_buffer, 36);
-
-                char fname[26], fsize[12];
-                sscanf(command_buffer, "%25s %11s", fname, fsize);
-
-                if (verbose)
-                {
-                    printf("CMD: %s %s %s %s %s %s\n", op, uid, gid, tsize, fname, fsize);
-                }
-
-                if (parseFileSize(fsize) == -1 || parseFName(fname) == -1)
-                {
-                    strcpy(buffer, "RPT NOK\n");
-                    write(connfd, buffer, strlen(buffer));
-                }
-                else
-                {
-                    FILE *FPtr;
-                    if ((FPtr = post(uid, gid, text, fname, mid)) == NULL)
+                    if (post(uid, gid, text, NULL, mid) == NULL)
                     {
                         strcpy(buffer, "RPT NOK\n");
                         write(connfd, buffer, strlen(buffer));
                     }
                     else
                     {
-                        int fbytes = atoi(fsize), fbytes_read = n - (strlen(fname) + strlen(fsize) + 2);
-
-                        if (fbytes_read > 0)
-                        {
-                            writeToFile(FPtr, &command_buffer[strlen(fname) + strlen(fsize) + 2], fbytes_read);
-                        }
-
-                        bzero(buffer, sizeof(buffer));
-                        while ((fbytes_read < fbytes) && (n = read(connfd, buffer, (((sizeof(buffer)) < (fbytes - fbytes_read)) ? (sizeof(buffer)) : (fbytes - fbytes_read)))) > 0)
-                        {
-                            writeToFile(FPtr, buffer, n);
-
-                            fbytes_read += n;
-                            bzero(buffer, n);
-                        }
-                        fclose(FPtr);
-
                         sprintf(buffer, "RPT %s\n", mid);
                         write(connfd, buffer, strlen(buffer));
                     }
                 }
-            }
-            else
-            {
-                strcpy(buffer, "RPT NOK\n");
-                write(connfd, buffer, strlen(buffer));
+                else if (c == ' ')
+                {
+                    bzero(command_buffer, sizeof(command_buffer));
+                    int n = read(connfd, command_buffer, 36);
+
+                    char fname[26], fsize[12];
+                    sscanf(command_buffer, "%25s %11s", fname, fsize);
+
+                    if (verbose)
+                    {
+                        printf("CMD: %s %s %s %s %s %s\n", op, uid, gid, tsize, fname, fsize);
+                    }
+
+                    if (parseFileSize(fsize) == -1 || parseFName(fname) == -1)
+                    {
+                        strcpy(buffer, "RPT NOK\n");
+                        write(connfd, buffer, strlen(buffer));
+                    }
+                    else
+                    {
+                        FILE *FPtr;
+                        if ((FPtr = post(uid, gid, text, fname, mid)) == NULL)
+                        {
+                            strcpy(buffer, "RPT NOK\n");
+                            write(connfd, buffer, strlen(buffer));
+                        }
+                        else
+                        {
+                            int fbytes = atoi(fsize), fbytes_read = n - (strlen(fname) + strlen(fsize) + 2);
+
+                            if (fbytes_read > 0)
+                            {
+                                writeToFile(FPtr, &command_buffer[strlen(fname) + strlen(fsize) + 2], fbytes_read);
+                            }
+
+                            bzero(buffer, sizeof(buffer));
+                            while ((fbytes_read < fbytes) && (n = read(connfd, buffer, (((sizeof(buffer)) < (fbytes - fbytes_read)) ? (sizeof(buffer)) : (fbytes - fbytes_read)))) > 0)
+                            {
+                                writeToFile(FPtr, buffer, n);
+
+                                fbytes_read += n;
+                                bzero(buffer, n);
+                            }
+                            fclose(FPtr);
+
+                            sprintf(buffer, "RPT %s\n", mid);
+                            write(connfd, buffer, strlen(buffer));
+                        }
+                    }
+                }
+                else
+                {
+                    strcpy(buffer, "RPT NOK\n");
+                    write(connfd, buffer, strlen(buffer));
+                }
             }
         }
     }
