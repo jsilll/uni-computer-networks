@@ -11,7 +11,7 @@
 
 #define DEFAULT_PORT "58006"
 #define DEFAULT_IP "localhost"
-#define MAX_INPUT_SIZE 240 + 32
+#define MAX_INPUT_SIZE 272
 
 char PORT[6], ADDRESS[INET6_ADDRSTRLEN];
 

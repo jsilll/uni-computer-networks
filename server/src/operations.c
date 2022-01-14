@@ -193,10 +193,10 @@ int myGroups(char *uid, char *buffer)
 }
 
 /**
- * @brief List all the users subscribed to a group
+ * @brief Opens group directory
  *
  * @param gid
- * @return
+ * @return DIR*
  */
 DIR *ulist(char *gid)
 {
@@ -245,7 +245,7 @@ void ulsAppendUser(struct dirent *de, char *buffer)
 }
 
 /**
- * @brief Posts a message in a group
+ * @brief Posts a text message in a group and opens file to write on if needed
  *
  * @param uid
  * @param gid

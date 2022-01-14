@@ -60,6 +60,7 @@ void sendCommandUDP()
         return;
     }
 
+    /* receive timeout setup */
     struct timeval tmout;
     memset((char *)&tmout, 0, sizeof(tmout));
     tmout.tv_sec = 15;
@@ -103,6 +104,7 @@ int openTCPSocket()
         return -1;
     }
 
+    /* receive timeout setup */
     struct timeval tmout;
     memset((char *)&tmout, 0, sizeof(tmout));
     tmout.tv_sec = 15;
@@ -287,7 +289,7 @@ void groups()
     {
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
-        last_read_size = 2 + strlen(gname) + 4 + 3;
+        last_read_size = strlen(gname) + 9;
         printf("Group ID: %02d Group name: %s Last Message ID: %04d\n", atoi(gid), gname, atoi(mid));
     }
 }
@@ -404,7 +406,7 @@ void myGroups()
     {
         base += last_read_size;
         sscanf(&RESPONSE_BUFFER[base], "%2s %24s %4s", gid, gname, mid);
-        last_read_size = 2 + strlen(gname) + 4 + 3;
+        last_read_size = strlen(gname) + 9;
         printf("Group ID: %02d Group name: %s Last Message ID: %04d\n", atoi(gid), gname, atoi(mid));
     }
 }
@@ -466,6 +468,8 @@ void ulist()
 
     int n;
     bzero(RESPONSE_BUFFER, 8);
+
+    /* first read -> get op and status */
     n = read(sockfd, RESPONSE_BUFFER, 7);
     char op[4], status[4];
     sscanf(RESPONSE_BUFFER, "%s %s", op, status);
@@ -476,12 +480,14 @@ void ulist()
         return;
     }
 
+    /* if status is "OK" */
     if (n == 6)
     {
         read(sockfd, RESPONSE_BUFFER, 1);
     }
 
     bzero(RESPONSE_BUFFER, 32);
+    /* reads users registered in group */
     while ((n = read(sockfd, RESPONSE_BUFFER, 31)) > 0)
     {
         printf("%s", RESPONSE_BUFFER);
@@ -522,6 +528,7 @@ void post(char *message, char *fname)
         return;
     }
 
+    /* if no file is being sent */
     if (fname == NULL)
     {
         sprintf(COMMAND_BUFFER, "PST %05d %02d %lu %s\n", UID, GID, strlen(message), message);
@@ -555,6 +562,7 @@ void post(char *message, char *fname)
         return;
     }
 
+    /* if some file is being sent */
     FILE *fptr = fopen(fname, "rb");
     if (fptr == NULL)
     {
@@ -576,6 +584,8 @@ void post(char *message, char *fname)
     int bytes_read;
     char file_buffer[1024];
     bzero(file_buffer, sizeof(file_buffer));
+
+    /* writes data from file to socket */
     while ((bytes_read = fread(file_buffer, 1, sizeof(file_buffer), fptr)) > 0)
     {
         if (write(sockfd, file_buffer, bytes_read) == -1)
@@ -670,6 +680,7 @@ void retrieve(int mid)
     }
 
     bzero(RESPONSE_BUFFER, 8);
+    /* first read -> op and status */
     if (read(sockfd, RESPONSE_BUFFER, 7) == -1)
     {
         close(sockfd);
@@ -699,6 +710,7 @@ void retrieve(int mid)
     char file_buffer[1024];
     bzero(file_buffer, sizeof(file_buffer));
     FILE *tmpfptr = fopen("temp.bin", "wb+");
+    /* write to a temporary file all data sent by server */
     while ((bytes_read = read(sockfd, file_buffer, sizeof(file_buffer))) > 0)
     {
         fwrite(file_buffer, sizeof(char), bytes_read, tmpfptr);
@@ -714,6 +726,7 @@ void retrieve(int mid)
 
     rewind(tmpfptr);
 
+    /* read from temporary file and data processing, creating local files for each message retrieved */
     int n_msg;
     fscanf(tmpfptr, "%d ", &n_msg);
     printf("Retrieving %d message(s) from group %d.\n", n_msg, GID);
@@ -743,6 +756,8 @@ void retrieve(int mid)
         }
 
         char c;
+
+        /* if there is no file in this message */
         if ((c = fgetc(tmpfptr)) != '/')
         {
             fseek(tmpfptr, -1L, SEEK_CUR);

@@ -32,6 +32,7 @@ void handleTCPCommand(int connfd, bool verbose)
     if (!strcmp(op, "ULS"))
     {
         bzero(command_buffer, 4);
+        /* reads gid */
         read(connfd, command_buffer, 3);
 
         char gid[4];
@@ -50,6 +51,7 @@ void handleTCPCommand(int connfd, bool verbose)
         else
         {
             DIR *dr;
+            /* opens group directory */
             if ((dr = ulist(gid)) == NULL)
             {
                 strcpy(buffer, "RUL NOK\n");
@@ -60,11 +62,13 @@ void handleTCPCommand(int connfd, bool verbose)
                 strcpy(buffer, "RUL OK");
                 write(connfd, buffer, strlen(buffer));
 
+                /* gets group name from directory */
                 ulsGetGName(gid, buffer);
                 write(connfd, buffer, strlen(buffer));
 
                 struct dirent *de;
                 bzero(buffer, sizeof(buffer));
+                /* gets users registered in group */
                 while ((de = readdir(dr)) != NULL)
                 {
                     ulsAppendUser(de, buffer);
@@ -85,15 +89,18 @@ void handleTCPCommand(int connfd, bool verbose)
         char uid[7], gid[4], tsize[5], text[241];
 
         bzero(command_buffer, 10);
+        /* reads uid and gid */
         read(connfd, command_buffer, 9);
 
         sscanf(command_buffer, "%6s %3s", uid, gid);
 
         bzero(command_buffer, 5);
+        /* reads text size*/
         read(connfd, command_buffer, 4);
 
         sscanf(command_buffer, "%4s", tsize);
         bzero(text, sizeof(text));
+        /* reads text message */
         strcpy(text, &command_buffer[strlen(tsize) + 1]);
 
         if (parseUID(uid) == -1 || parseGID(gid) == -1 || parseTSize(tsize) == -1)
@@ -109,6 +116,7 @@ void handleTCPCommand(int connfd, bool verbose)
         else
         {
             char c, mid[5];
+            /* when text message is of size 1 -> special case */
             if (atoi(tsize) == 1)
             {
                 if (verbose)
@@ -130,7 +138,9 @@ void handleTCPCommand(int connfd, bool verbose)
             }
             else
             {
+                /* reads the rest of the text message*/
                 read(connfd, &text[strlen(text)], atoi(tsize) - strlen(text));
+                /* checks if post has a file */
                 read(connfd, &c, 1);
                 if (c == '\n')
                 {
@@ -153,6 +163,7 @@ void handleTCPCommand(int connfd, bool verbose)
                 else if (c == ' ')
                 {
                     bzero(command_buffer, sizeof(command_buffer));
+                    /* reads file name and size */
                     int n = read(connfd, command_buffer, 36);
 
                     char fname[26], fsize[12];
@@ -171,6 +182,7 @@ void handleTCPCommand(int connfd, bool verbose)
                     else
                     {
                         FILE *FPtr;
+                        /* opens file to write on */
                         if ((FPtr = post(uid, gid, text, fname, mid)) == NULL)
                         {
                             strcpy(buffer, "RPT NOK\n");
@@ -178,6 +190,7 @@ void handleTCPCommand(int connfd, bool verbose)
                         }
                         else
                         {
+                            /* fbytes_read -> bytes left to read besides the ones read when reading file name and size */
                             int fbytes = atoi(fsize), fbytes_read = n - (strlen(fname) + strlen(fsize) + 2);
 
                             if (fbytes_read > 0)

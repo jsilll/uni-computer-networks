@@ -7,7 +7,7 @@
 
 /**
  * @brief Parses a string representing a group ID.
- * 2-digit number (01 – 99)
+ * number (1 – 99)
  *
  * @param gid string that represents a group ID
  * @return int
@@ -22,7 +22,7 @@ int parseGID(char *gid)
 
 /**
  * @brief Parses a string representing a user ID.
- * 5-digit IST student number
+ * IST student number
  *
  * @param uid string that represents a user ID
  * @return int
@@ -77,7 +77,6 @@ int parseGName(char *gname)
 
 /**
  * @brief Parses a string representing a message ID.
- * 4-digit number
  *
  * @param mid string that represents a message ID
  * @return int
@@ -86,35 +85,6 @@ int parseMID(char *mid)
 {
   int parsedMid = atoi(mid);
   if (parsedMid <= 0 || parsedMid > 9999)
-    return -1;
-  return 0;
-}
-
-/**
- * @brief Parses Tsize argument
- *
- * @param tsize
- * @return int
- */
-int parseTSize(char *tsize)
-{
-  int size = atoi(tsize);
-  if (strlen(tsize) > 3 || size > 240 || size <= 0)
-  {
-    return -1;
-  }
-  return 0;
-}
-
-/**
- * @brief Parses the file size
- *
- * @param size
- * @return int
- */
-int parseFileSize(char *size)
-{
-  if (strlen(size) > 10)
     return -1;
   return 0;
 }
