@@ -567,7 +567,7 @@ void post(char *message, char *fname)
     FILE *fptr = fopen(fname, "rb");
     if (fptr == NULL)
     {
-        fprintf(stderr, ERR_FILE_NOT_FOUND);
+        fprintf(stderr, ERR_LOCAL_FILE_NOT_FOUND);
         return;
     }
     fseek(fptr, 0L, SEEK_END);

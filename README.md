@@ -27,7 +27,7 @@ Cada um das pastas `server/src` e `client/src` contêm os ficheiros necessários
 #### client/init_args_parsing.h:
     - Contém as funções para validar os argumentos iniciais do programa.
 #### client/interface.h:
-    - Contém todas as mensagens que o cliente pode escrever na consola, bem como as palavras que o utilizador tem que escrever na consola para executar cada um dos comandos do protocolo.
+    - Contém todas as mensagens que o cliente pode escrever no terminal, bem como as palavras que o utilizador tem de escrever no terminal para executar cada um dos comandos do protocolo.
 #### client/commands.c/.h:
     - Responsável pelo envio de cada um dos comandos ao servidor.
 #### client/commands_args_parsing.h

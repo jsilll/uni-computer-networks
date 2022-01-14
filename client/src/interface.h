@@ -42,17 +42,18 @@
 #define INFO_NOT_IP "Address isn't a valid IP, checking if it's a valid address.\n"
 #define INFO_POSTED "Posted in group %02d successfully, message ID is %04d.\n"
 #define INFO_REGISTERED "User registered successfully.\n"
-#define INFO_RETRIEVING "Retrieving %d message(s) from group %d.\n"
+#define INFO_RETRIEVING "Retrieving %d message(s) from group %02d.\n"
 #define INFO_SUBSCRIBED "Subscribed to group successfully.\n"
 #define INFO_UNREGISTERED "User unregistered successfully.\n"
 #define INFO_UNSUBSCRIBED "Unsubscribed from group %02d successfully.\n"
 
 /* Error Messages */
 
-#define ERR_LOCAL_INVALID_GNAME "[LOCAL] Invalid group name.\n"
+#define ERR_LOCAL_FILE_NOT_FOUND "[LOCAL] File does not exist.\n"
 #define ERR_LOCAL_GID_NOT_SELECTED "[LOCAL] Group ID not selected.\n"
 #define ERR_LOCAL_INVALID_FNAME "[LOCAL] Invalid filename.\n"
 #define ERR_LOCAL_INVALID_GID "[LOCAL] Invalid group ID.\n"
+#define ERR_LOCAL_INVALID_GNAME "[LOCAL] Invalid group name.\n"
 #define ERR_LOCAL_INVALID_MID "[LOCAL] Invalid message ID.\n"
 #define ERR_LOCAL_INVALID_PASSWD "[LOCAL] Invalid password.\n"
 #define ERR_LOCAL_INVALID_POST_CMD "[LOCAL] Invalid post command.\n"
@@ -74,7 +75,6 @@
 #define ERR_SOCK_TCP "Error creating TCP socket.\n"
 #define ERR_SOCK_UDP "Error creating UDP socket.\n"
 
-#define ERR_FILE_NOT_FOUND "[LOCAL] File does not exist.\n"
 #define ERR_GROUP_DOESNT_EXIST "Group %02d doesn't exist.\n"
 #define ERR_INVALID_GID "Invalid group ID.\n"
 #define ERR_INVALID_GNAME "Invalid group name.\n"
