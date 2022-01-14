@@ -54,7 +54,7 @@
 #define ERR_LOCAL_INVALID_FNAME "[LOCAL] Invalid filename.\n"
 #define ERR_LOCAL_INVALID_GID "[LOCAL] Invalid group ID.\n"
 #define ERR_LOCAL_INVALID_MID "[LOCAL] Invalid message ID.\n"
-#define ERR_LOCAL_INVALID_PASSWD "[LOCAL] Invalid group name.\n"
+#define ERR_LOCAL_INVALID_PASSWD "[LOCAL] Invalid password.\n"
 #define ERR_LOCAL_INVALID_POST_CMD "[LOCAL] Invalid post command.\n"
 #define ERR_LOCAL_INVALID_TXT_MSG "[LOCAL] Message exceeds 240 characters.\n"
 #define ERR_LOCAL_INVALID_UID "[LOCAL] Invalid user ID.\n"
