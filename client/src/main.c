@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
  */
 void exitClient(int signum)
 {
-  printf("Exiting Centralized Messaging Client.\n");
+  printf(INFO_EXITING);
   freeServerAddresses();
   exit(signum);
 }
@@ -113,21 +113,21 @@ void readCommand(char *line)
     numTokens = sscanf(line, "%s \"%[^\"]\" %s", op, arg1, arg2);
     if (numTokens < 2)
     {
-      fprintf(stderr, ERR_INVALID_POST_CMD);
+      fprintf(stderr, ERR_LOCAL_INVALID_POST_CMD);
     }
     else if ((!strlen(arg2) && line[strlen(line) - 2] != '"'))
     {
-      fprintf(stderr, ERR_INVALID_POST_CMD);
+      fprintf(stderr, ERR_LOCAL_INVALID_POST_CMD);
     }
     else if (strlen(arg2))
     {
       if (strlen(arg1) > 240)
       {
-        fprintf(stderr, ERR_INVALID_TXT_MSG);
+        fprintf(stderr, ERR_LOCAL_INVALID_TXT_MSG);
       }
       else if (parseFName(basename(arg2)) == -1)
       {
-        fprintf(stderr, ERR_INVALID_FNAME);
+        fprintf(stderr, ERR_LOCAL_INVALID_FNAME);
       }
       else
       {
@@ -138,7 +138,7 @@ void readCommand(char *line)
     {
       if (strlen(arg1) > 240)
       {
-        fprintf(stderr, ERR_INVALID_TXT_MSG);
+        fprintf(stderr, ERR_LOCAL_INVALID_TXT_MSG);
       }
       else
       {
@@ -148,7 +148,7 @@ void readCommand(char *line)
   }
   else if (numTokens == 4)
   {
-    fprintf(stderr, ERR_UNKNOWN_CMD);
+    fprintf(stderr, ERR_LOCAL_UNKNOWN_CMD);
   }
   else
   {
@@ -185,7 +185,7 @@ void readCommand(char *line)
       }
       else
       {
-        fprintf(stderr, ERR_UNKNOWN_CMD);
+        fprintf(stderr, ERR_LOCAL_UNKNOWN_CMD);
       }
       break;
 
@@ -194,7 +194,7 @@ void readCommand(char *line)
       {
         if (parseGID(arg1) == -1)
         {
-          fprintf(stderr, ERR_INVALID_GID);
+          fprintf(stderr, ERR_LOCAL_INVALID_GID);
         }
         else
         {
@@ -205,7 +205,7 @@ void readCommand(char *line)
       {
         if (parseGID(arg1) == -1)
         {
-          fprintf(stderr, ERR_INVALID_GID);
+          fprintf(stderr, ERR_LOCAL_INVALID_GID);
         }
         else
         {
@@ -216,7 +216,7 @@ void readCommand(char *line)
       {
         if (parseMID(arg1) == -1)
         {
-          fprintf(stderr, ERR_INVALID_MID);
+          fprintf(stderr, ERR_LOCAL_INVALID_MID);
         }
         else
         {
@@ -225,7 +225,7 @@ void readCommand(char *line)
       }
       else
       {
-        fprintf(stderr, ERR_UNKNOWN_CMD);
+        fprintf(stderr, ERR_LOCAL_UNKNOWN_CMD);
       }
       break;
 
@@ -234,11 +234,11 @@ void readCommand(char *line)
       {
         if (parseUID(arg1) == -1)
         {
-          fprintf(stderr, ERR_INVALID_UID);
+          fprintf(stderr, ERR_LOCAL_INVALID_UID);
         }
         else if (parsePassword(arg2) == -1)
         {
-          fprintf(stderr, ERR_INVALID_PASSWD);
+          fprintf(stderr, ERR_LOCAL_INVALID_PASSWD);
         }
         else
         {
@@ -249,11 +249,11 @@ void readCommand(char *line)
       {
         if (parseUID(arg1) == -1)
         {
-          fprintf(stderr, ERR_INVALID_UID);
+          fprintf(stderr, ERR_LOCAL_INVALID_UID);
         }
         else if (parsePassword(arg2) == -1)
         {
-          fprintf(stderr, ERR_INVALID_PASSWD);
+          fprintf(stderr, ERR_LOCAL_INVALID_PASSWD);
         }
         else
         {
@@ -264,11 +264,11 @@ void readCommand(char *line)
       {
         if (parseUID(arg1) == -1)
         {
-          fprintf(stderr, ERR_INVALID_UID);
+          fprintf(stderr, ERR_LOCAL_INVALID_UID);
         }
         else if (parsePassword(arg2) == -1)
         {
-          fprintf(stderr, ERR_INVALID_PASSWD);
+          fprintf(stderr, ERR_LOCAL_INVALID_PASSWD);
         }
         else
         {
@@ -280,11 +280,11 @@ void readCommand(char *line)
 
         if (parseGID(arg1) == -1 && strcmp(arg1, "0") && strcmp(arg1, "00"))
         {
-          fprintf(stderr, ERR_INVALID_UID);
+          fprintf(stderr, ERR_LOCAL_INVALID_GID);
         }
         else if (parseGName(arg2) == -1)
         {
-          fprintf(stderr, ERR_INVALID_PASSWD);
+          fprintf(stderr, ERR_LOCAL_INVALID_GNAME);
         }
         else
         {
@@ -293,12 +293,12 @@ void readCommand(char *line)
       }
       else
       {
-        fprintf(stderr, ERR_UNKNOWN_CMD);
+        fprintf(stderr, ERR_LOCAL_UNKNOWN_CMD);
       }
       break;
 
     default:
-      fprintf(stderr, ERR_UNKNOWN_CMD);
+      fprintf(stderr, ERR_LOCAL_UNKNOWN_CMD);
     }
   }
 }

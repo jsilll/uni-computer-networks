@@ -95,7 +95,7 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "GLS"))
   {
-    groups(response_buffer);
+    listGroups(response_buffer, NULL);
   }
   else if (!strcmp(op, "GSR"))
   {
@@ -155,10 +155,12 @@ void handleCommandUDP(int udpfd, struct sockaddr_in cliaddr, bool verbose)
   }
   else if (!strcmp(op, "GLM"))
   {
-    if (parseUID(arg1) == -1 || myGroups(arg1, response_buffer) == -1)
+    if (parseUID(arg1) == -1)
     {
       strcpy(response_buffer, "RGM E_USR\n");
     }
+    
+    listGroups(response_buffer, arg1);
   }
   else
   {

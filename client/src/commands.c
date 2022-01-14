@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "commands.h"
+#include "interface.h"
 
 bool LOGGED_IN = false, GROUP_SELECTED = false;
 int UID = 0, GID = 0;
@@ -33,14 +34,14 @@ int setupServerAddresses(char *ip, char *port)
 
     if ((errcode = getaddrinfo(ip, port, &hints, &ADDR_UDP)) != 0)
     {
-        fprintf(stderr, "Error on getaddrinfo (udp): %s.\n", gai_strerror(errcode));
+        fprintf(stderr, ERR_GETADDRINFO_UDP, gai_strerror(errcode));
         return -1;
     }
 
     hints.ai_socktype = SOCK_STREAM;
     if ((errcode = getaddrinfo(ip, port, &hints, &ADDR_TCP)) != 0)
     {
-        fprintf(stderr, "Error on getaddrinfo (tcp): %s.\n", gai_strerror(errcode));
+        fprintf(stderr, ERR_GETADDRINFO_TCP, gai_strerror(errcode));
         return -1;
     }
 
@@ -56,7 +57,7 @@ void sendCommandUDP()
     int sockfd;
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
     {
-        fprintf(stderr, "Error creating UDP socket.\n");
+        fprintf(stderr, ERR_SOCK_UDP);
         return;
     }
 
@@ -66,14 +67,14 @@ void sendCommandUDP()
     tmout.tv_sec = 15;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) < 0)
     {
-        fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+        fprintf(stderr, ERR_SETSOCKOPT);
         exit(EXIT_FAILURE);
     }
 
     if (sendto(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER), 0, ADDR_UDP->ai_addr, ADDR_UDP->ai_addrlen) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "sendto(COMMAND_BUFFER) failed.\n");
+        fprintf(stderr, ERR_SENDTO);
         return;
     }
 
@@ -83,7 +84,7 @@ void sendCommandUDP()
     if (recvfrom(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER), 0, (struct sockaddr *)&addr, &addrlen) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "recvfrom(RESPONSE_BUFFER) failed.\n");
+        fprintf(stderr, ERR_RECVFROM);
         return;
     }
 
@@ -100,7 +101,7 @@ int openTCPSocket()
     int sockfd;
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
-        fprintf(stderr, "Error creating TCP socket.\n");
+        fprintf(stderr, ERR_SOCK_TCP);
         return -1;
     }
 
@@ -110,14 +111,14 @@ int openTCPSocket()
     tmout.tv_sec = 15;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tmout, sizeof(struct timeval)) == -1)
     {
-        fprintf(stderr, "setsockopt(SO_RCVTIMEO) failed.\n");
+        fprintf(stderr, ERR_SETSOCKOPT);
         return -1;
     }
 
     if (connect(sockfd, ADDR_TCP->ai_addr, ADDR_TCP->ai_addrlen) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "connect(ADDR_TCP) failed.\n");
+        fprintf(stderr, ERR_CONNECT);
         return -1;
     }
 
@@ -149,15 +150,15 @@ void registerUser(int uid, char *password)
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid user ID and/or password.\n");
+        fprintf(stderr, ERR_INVALID_UID_OR_PASSWD);
     }
     else if (!strcmp(status, "DUP"))
     {
-        fprintf(stderr, "User already registered.\n");
+        fprintf(stderr, ERR_USER_REGISTERED);
     }
     else
     {
-        printf("User registered successfully.\n");
+        printf(INFO_REGISTERED);
     }
 }
 
@@ -176,11 +177,11 @@ void unregisterUser(int uid, char *password)
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid user ID and/or password, or user doesn't exist.\n");
+        fprintf(stderr, ERR_INVALID_UID_OR_PASSWD_OR_DOESNT_EXIST);
     }
     else
     {
-        printf("User unregistered successfully.\n");
+        printf(INFO_UNREGISTERED);
     }
 
     if (LOGGED_IN && uid == UID && !strcmp(password, PASSWORD))
@@ -188,7 +189,7 @@ void unregisterUser(int uid, char *password)
         LOGGED_IN = false;
         UID = 0;
         bzero(PASSWORD, sizeof(PASSWORD));
-        printf("Logged out successfully.\n");
+        printf(INFO_LOGGED_OUT);
     }
 }
 
@@ -202,7 +203,7 @@ void login(int uid, char *password)
 {
     if (LOGGED_IN)
     {
-        fprintf(stderr, "[LOCAL] User needs to logout first.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGOUT);
         return;
     }
 
@@ -213,7 +214,7 @@ void login(int uid, char *password)
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid user ID and/or password, or user doesn't exist.\n");
+        fprintf(stderr, ERR_INVALID_UID_OR_PASSWD_OR_DOESNT_EXIST);
     }
     else
     {
@@ -221,7 +222,7 @@ void login(int uid, char *password)
         UID = uid;
         strncpy(PASSWORD, password, sizeof(PASSWORD) - 1);
 
-        printf("User logged in successfully.\n");
+        printf(INFO_LOGGED_IN);
     }
 }
 
@@ -233,7 +234,7 @@ void logout()
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGIN);
         return;
     }
 
@@ -244,14 +245,14 @@ void logout()
     sscanf(RESPONSE_BUFFER, "%3s %3s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Invalid user ID and/or password, or user doesn't exist.\n");
+        fprintf(stderr, ERR_INVALID_UID_OR_PASSWD_OR_DOESNT_EXIST);
     }
     else
     {
         LOGGED_IN = false;
         UID = 0;
         bzero(PASSWORD, sizeof(PASSWORD));
-        printf("Logged out successfully.\n");
+        printf(INFO_LOGGED_OUT);
     }
 }
 
@@ -263,11 +264,11 @@ void showUID()
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGIN);
         return;
     }
 
-    printf("[LOCAL] Currently selected user ID: %05d\n", UID);
+    printf(INFO_LOCAL_UID, UID);
 }
 
 /**
@@ -304,7 +305,7 @@ void subscribe(int gid, char *gname)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGIN);
         return;
     }
 
@@ -315,33 +316,33 @@ void subscribe(int gid, char *gname)
     sscanf(RESPONSE_BUFFER, "%3s %8s", op, status);
     if (!strcmp(status, "E_USR"))
     {
-        fprintf(stderr, "Invalid user ID.\n");
+        fprintf(stderr, ERR_INVALID_UID);
     }
     else if (!strcmp(status, "E_GRP"))
     {
-        fprintf(stderr, "Invalid group ID.\n");
+        fprintf(stderr, ERR_INVALID_GID);
     }
     else if (!strcmp(status, "E_GNAME"))
     {
-        fprintf(stderr, "Invalid group name.\n");
+        fprintf(stderr, ERR_INVALID_GNAME);
     }
     else if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Couldn't subscribe to group %02d.\n", gid);
+        fprintf(stderr, ERR_SUBSCRIBE, gid);
     }
     else if (!strcmp(status, "FULL"))
     {
-        fprintf(stderr, "Maximum number of groups reached.\n");
+        fprintf(stderr, ERR_MAX_GROUPS);
     }
     else if (!strcmp(status, "NEW"))
     {
         int n;
         sscanf(&RESPONSE_BUFFER[7], "%d", &n);
-        printf("New group created: %02d.\n", n);
+        printf(INFO_NEW_GROUP, n);
     }
     else
     {
-        printf("Subscribed to group successfully.\n");
+        printf(INFO_SUBSCRIBED);
     }
 }
 
@@ -354,7 +355,7 @@ void unsubscribe(int gid)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGIN);
         return;
     }
 
@@ -365,19 +366,19 @@ void unsubscribe(int gid)
     sscanf(RESPONSE_BUFFER, "%3s %8s", op, status);
     if (!strcmp(status, "E_USR"))
     {
-        fprintf(stderr, "Invalid user ID.\n");
+        fprintf(stderr, ERR_INVALID_UID);
     }
     else if (!strcmp(status, "E_GRP"))
     {
-        fprintf(stderr, "Invalid group ID.\n");
+        fprintf(stderr, ERR_INVALID_GID);
     }
     else if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Group doesn't exist.\n");
+        fprintf(stderr, ERR_GROUP_DOESNT_EXIST, gid);
     }
     else
     {
-        printf("Unsubscribed from group %02d successfully.\n", gid);
+        printf(INFO_UNSUBSCRIBED, gid);
     }
 }
 
@@ -389,7 +390,7 @@ void myGroups()
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "[LOCAL] User needs to be logged in.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGIN);
         return;
     }
 
@@ -420,7 +421,7 @@ void selectGroup(int gid)
 {
     GROUP_SELECTED = true;
     GID = gid;
-    printf("[LOCAL] group ID %02d is now selected.\n", GID);
+    printf(INFO_LOCAL_SELECTED_GID, GID);
 }
 
 /**
@@ -431,11 +432,11 @@ void showGID()
 {
     if (!GROUP_SELECTED)
     {
-        fprintf(stderr, "[LOCAL] group ID not selected.\n");
+        fprintf(stderr, ERR_LOCAL_GID_NOT_SELECTED);
     }
     else
     {
-        printf("[LOCAL] Currently selected group ID: %02d\n", GID);
+        printf(INFO_LOCAL_GID, GID);
     }
 }
 
@@ -455,14 +456,14 @@ void ulist()
 
     if (!GROUP_SELECTED)
     {
-        fprintf(stderr, "Group needs to be selected.\n");
+        fprintf(stderr, ERR_LOCAL_GID_NOT_SELECTED);
         return;
     }
 
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Couldn't send command_buffer.\n");
+        fprintf(stderr, ERR_SEND_CMD_BUF);
         return;
     }
 
@@ -476,7 +477,7 @@ void ulist()
     if (!strcmp(status, "NOK"))
     {
         close(sockfd);
-        fprintf(stderr, "Group %02d doesn't exist.\n", GID);
+        fprintf(stderr, ERR_GROUP_DOESNT_EXIST, GID);
         return;
     }
 
@@ -496,7 +497,7 @@ void ulist()
 
     if (n == -1)
     {
-        fprintf(stderr, "Error receiving server's response.\n");
+        fprintf(stderr, ERR_RCV_SERVER_RESPONSE);
     }
 
     close(sockfd);
@@ -512,13 +513,13 @@ void post(char *message, char *fname)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User needs to be logged in.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGIN);
         return;
     }
 
     if (!GROUP_SELECTED)
     {
-        fprintf(stderr, "Group needs to be selected.\n");
+        fprintf(stderr, ERR_LOCAL_GID_NOT_SELECTED);
         return;
     }
 
@@ -535,7 +536,7 @@ void post(char *message, char *fname)
         if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
         {
             close(sockfd);
-            fprintf(stderr, "Couldn't send command_buffer.\n");
+            fprintf(stderr, ERR_SEND_CMD_BUF);
             return;
         }
 
@@ -543,7 +544,7 @@ void post(char *message, char *fname)
         if (read(sockfd, RESPONSE_BUFFER, 9) == -1)
         {
             close(sockfd);
-            fprintf(stderr, "Error receiving server's response.\n");
+            fprintf(stderr, ERR_RCV_SERVER_RESPONSE);
             return;
         }
 
@@ -553,11 +554,11 @@ void post(char *message, char *fname)
         sscanf(RESPONSE_BUFFER, "%s %s", op, status);
         if (!strcmp(status, "NOK"))
         {
-            fprintf(stderr, "Couldn't post in group %02d\n", GID);
+            fprintf(stderr, ERR_POST_IN_GROUP, GID);
         }
         else
         {
-            printf("Posted in group %02d successfully, message ID is %04d.\n", GID, atoi(status));
+            printf(INFO_POSTED, GID, atoi(status));
         }
         return;
     }
@@ -566,7 +567,7 @@ void post(char *message, char *fname)
     FILE *fptr = fopen(fname, "rb");
     if (fptr == NULL)
     {
-        fprintf(stderr, "File does not exist.\n");
+        fprintf(stderr, ERR_FILE_NOT_FOUND);
         return;
     }
     fseek(fptr, 0L, SEEK_END);
@@ -577,7 +578,7 @@ void post(char *message, char *fname)
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Couldn't send command_buffer.\n");
+        fprintf(stderr, ERR_SEND_CMD_BUF);
         return;
     }
 
@@ -597,14 +598,14 @@ void post(char *message, char *fname)
                 if (read(sockfd, RESPONSE_BUFFER, sizeof(RESPONSE_BUFFER)) == -1)
                 {
                     close(sockfd);
-                    fprintf(stderr, "Error receiving server's response.\n");
+                    fprintf(stderr, ERR_RCV_SERVER_RESPONSE);
                     return;
                 }
                 printf("%s", RESPONSE_BUFFER);
                 break;
 
             default:
-                fprintf(stderr, "Couldn't send file: %s.\n", strerror(errno));
+                fprintf(stderr, ERR_SEND_FILE, strerror(errno));
                 break;
             }
 
@@ -620,7 +621,7 @@ void post(char *message, char *fname)
     if (write(sockfd, "\n", 1) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Couldn't send '\\n' after file: %s.\n", strerror(errno));
+        fprintf(stderr, ERR_SEND_FILE_FINISH, strerror(errno));
         return;
     }
 
@@ -628,7 +629,7 @@ void post(char *message, char *fname)
     if (read(sockfd, RESPONSE_BUFFER, 9) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Error receiving server's response.\n");
+        fprintf(stderr, ERR_RCV_SERVER_RESPONSE);
         return;
     }
 
@@ -638,11 +639,11 @@ void post(char *message, char *fname)
     sscanf(RESPONSE_BUFFER, "%s %s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Couldn't post in group %02d\n", GID);
+        fprintf(stderr, ERR_POST_IN_GROUP, GID);
     }
     else
     {
-        printf("Posted in group %02d successfully, message ID is %04d.\n", GID, atoi(status));
+        printf(INFO_POSTED, GID, atoi(status));
     }
 }
 
@@ -655,13 +656,13 @@ void retrieve(int mid)
 {
     if (!LOGGED_IN)
     {
-        fprintf(stderr, "User needs to be logged in.\n");
+        fprintf(stderr, ERR_LOCAL_USER_NEEDS_TO_LOGIN);
         return;
     }
 
     if (!GROUP_SELECTED)
     {
-        fprintf(stderr, "Group needs to be selected.\n");
+        fprintf(stderr, ERR_LOCAL_GID_NOT_SELECTED);
         return;
     }
 
@@ -675,7 +676,7 @@ void retrieve(int mid)
     if (write(sockfd, COMMAND_BUFFER, strlen(COMMAND_BUFFER)) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Couldn't send command_buffer.\n");
+        fprintf(stderr, ERR_SEND_CMD_BUF);
         return;
     }
 
@@ -684,7 +685,7 @@ void retrieve(int mid)
     if (read(sockfd, RESPONSE_BUFFER, 7) == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Error receiving server's response.\n");
+        fprintf(stderr, ERR_RCV_SERVER_RESPONSE);
         return;
     }
 
@@ -696,11 +697,11 @@ void retrieve(int mid)
 
         if (!strcmp(status, "EOF"))
         {
-            fprintf(stderr, "There's no available messages to display starting from message ID %04d\n", mid);
+            fprintf(stderr, ERR_RETRIEVE_EOF, mid);
         }
         else if (!strcmp(status, "NOK"))
         {
-            fprintf(stderr, "Couldn't retrieve message starting from message ID %04d from group %02d.\n", mid, GID);
+            fprintf(stderr, ERR_RETRIEVE_NOK, mid, GID);
         }
 
         return;
@@ -720,7 +721,7 @@ void retrieve(int mid)
     if (bytes_read == -1)
     {
         close(sockfd);
-        fprintf(stderr, "Error receiving server's response.\n");
+        fprintf(stderr, ERR_RCV_SERVER_RESPONSE);
         return;
     }
 
@@ -729,7 +730,7 @@ void retrieve(int mid)
     /* read from temporary file and data processing, creating local files for each message retrieved */
     int n_msg;
     fscanf(tmpfptr, "%d ", &n_msg);
-    printf("Retrieving %d message(s) from group %d.\n", n_msg, GID);
+    printf(INFO_RETRIEVING, n_msg, GID);
 
     for (int i = 0; i < n_msg; i++)
     {
