@@ -325,7 +325,7 @@ void subscribe(int gid, char *gname)
     }
     else if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Unexpected error occurred.\n");
+        fprintf(stderr, "Couldn't subscribe to group %02d.\n", gid);
     }
     else if (!strcmp(status, "FULL"))
     {
@@ -546,7 +546,7 @@ void post(char *message, char *fname)
         sscanf(RESPONSE_BUFFER, "%s %s", op, status);
         if (!strcmp(status, "NOK"))
         {
-            fprintf(stderr, "Unknown error occurred.\n");
+            fprintf(stderr, "Couldn't post in group %02d\n", GID);
         }
         else
         {
@@ -628,7 +628,7 @@ void post(char *message, char *fname)
     sscanf(RESPONSE_BUFFER, "%s %s", op, status);
     if (!strcmp(status, "NOK"))
     {
-        fprintf(stderr, "Unknown error occurred.\n");
+        fprintf(stderr, "Couldn't post in group %02d\n", GID);
     }
     else
     {
@@ -685,11 +685,11 @@ void retrieve(int mid)
 
         if (!strcmp(status, "EOF"))
         {
-            fprintf(stderr, "Unexpected error occurred.\n");
+            fprintf(stderr, "There's no available messages to display starting from message ID %04d\n", mid);
         }
         else if (!strcmp(status, "NOK"))
         {
-            fprintf(stderr, "There's no available messages to display starting from message ID %04d\n", mid);
+            fprintf(stderr, "Couldn't retrieve message starting from message ID %04d from group %02d.\n", mid, GID);
         }
 
         return;

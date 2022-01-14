@@ -21,14 +21,14 @@ SERVER_BIN_DIR=$(SERVER_DIR)/$(BIN_DIR)
 SERVER_SRCS=$(wildcard $(SERVER_SRC_DIR)/*.c)
 SERVER_OBJS=$(patsubst $(SERVER_SRC_DIR)/%.c, $(SERVER_OBJ_DIR)/%.o, $(SERVER_SRCS))
 
-SUBMISSION=submission.zip
+SUBMISSION=proj_6.zip
 
 .PHONY: all submission clean 
 
 all: $(CLIENT_BIN) $(SERVER_BIN)
 
 submission: clean
-	zip -r $(SUBMISSION) $(CLIENT_DIR) $(SERVER_DIR) README.md Makefile 
+	zip -r $(SUBMISSION) $(CLIENT_DIR) $(SERVER_DIR) 2021_2022_proj_auto_avaliacao.xlsx README.md Makefile 
 
 $(CLIENT_BIN): $(CLIENT_OBJS)
 	$(CC) $(CFLAGS) $(CLIENT_OBJS) -o $@
