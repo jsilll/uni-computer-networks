@@ -224,6 +224,7 @@ void handleTCPCommand(int connfd, bool verbose)
     else if (!strcmp(op, "RTV"))
     {
         bzero(command_buffer, 15);
+        /* reads uid, gid and mid */
         read(connfd, command_buffer, 14);
 
         char uid[7], gid[4], mid[6];
@@ -235,7 +236,7 @@ void handleTCPCommand(int connfd, bool verbose)
         }
 
         int n_msg = 0;
-        if (parseUID(uid) == -1 || parseGID(gid) == -1 || parseMID(mid) == -1 || (n_msg = retrieve(uid, gid, mid)) == -1)
+        if (parseUID(uid) == -1 || parseGID(gid) == -1 || parseMID(mid) == -1 || (n_msg = getNumMsg(uid, gid, mid)) == -1)
         {
             strcpy(buffer, "RRT NOK\n");
             write(connfd, buffer, strlen(buffer));
@@ -248,13 +249,16 @@ void handleTCPCommand(int connfd, bool verbose)
         else
         {
             sprintf(buffer, "RRT OK %d", n_msg);
+            /* writes number of messages to be retrieved */
             write(connfd, buffer, strlen(buffer));
 
             int base_msg = atoi(mid);
+            /* for each message get the author, text message and file if it exists */
             for (int i = 0; i < n_msg; i++)
             {
                 bzero(buffer, sizeof(buffer));
-                FILE *FPtr = retrieveAux(gid, base_msg + i, buffer);
+                FILE *FPtr = retrieve(gid, base_msg + i, buffer);
+                /* writes mid, author, text message, size and file name if file exists */
                 write(connfd, buffer, strlen(buffer));
 
                 if (FPtr != NULL)
@@ -263,6 +267,7 @@ void handleTCPCommand(int connfd, bool verbose)
                     bzero(buffer, sizeof(buffer));
                     while ((bytes_read = readFile(FPtr, buffer, 1024)) > 0)
                     {
+                        /* writes file data */
                         if (write(connfd, buffer, bytes_read) == -1)
                         {
                             close(connfd);
